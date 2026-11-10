@@ -1,0 +1,25 @@
+Notes is a clean, private place for everything you want to keep: lists, ideas, plans and drafts.
+
+Write in Markdown, read it formatted
+• Headings, bold, italic, strikethrough, code, quotes, numbered and bulleted lists, and links
+• Notes open formatted; tap the text or the pencil to edit
+• Checklists: write "- [ ] item" and tick it straight in the note
+• Everything saves as you type
+
+Find things fast
+• Search the titles and text of all your notes as you type
+• Tags: add as many as you like and filter the list by one
+• Colours to make notes stand out
+• Collections to keep work and personal notes apart
+• Grid or list view
+
+Quick to capture
+• A quick note field at the top of the list
+• Share text or a link from any app into a new note
+• Share any note out as text
+• A "New note" shortcut on your home screen
+
+Private and open
+• No ads, no accounts, no tracking
+• No internet permission: your notes stay on your phone
+• Free and open source under the Apache-2.0 licence: github.com/PVOT-OSS/Notes
