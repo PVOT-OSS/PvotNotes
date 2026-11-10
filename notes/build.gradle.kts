@@ -7,13 +7,17 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val versionMajor = 1
+val versionMinor = 0
+val versionPatch = 0
+
 android {
     namespace = "org.prauga.notes"
 
     defaultConfig {
         applicationId = "org.prauga.notes"
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
+        versionName = "$versionMajor.$versionMinor.$versionPatch"
     }
 
     buildTypes {
