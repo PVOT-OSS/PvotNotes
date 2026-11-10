@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+     SPDX-License-Identifier: Apache-2.0
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.26667"
+        android:scaleY="0.26667"
+        android:translateX="16.9333"
+        android:translateY="18.0000">
+        <path
+            android:pathData="M147.316,64.314H130.684C103.243,64.314 89.5218,64.3139 80.9969,72.8389C72.4719,81.3638 72.4719,95.0846 72.4719,122.526V159.948C72.4719,187.389 72.4719,201.11 80.9969,209.635C89.5218,218.16 103.243,218.16 130.684,218.16H147.316C174.757,218.16 188.478,218.16 197.003,209.635C205.528,201.11 205.528,187.389 205.528,159.948V122.526C205.528,95.0846 205.528,81.3638 197.003,72.8388C188.478,64.3139 174.757,64.314 147.316,64.314Z"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="12.474"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M101.578,51.84V76.7879M139,51.84V76.7879M176.422,51.84V76.7879"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="12.474"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M105.736,126.684H172.264M105.736,159.948H139"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="12.474"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>
