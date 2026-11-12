@@ -3,7 +3,10 @@
 
 plugins { alias(libs.plugins.pvot.android.library) }
 
-android { namespace = "org.prauga.notes.core.ical" }
+android {
+    namespace = "org.prauga.notes.core.ical"
+    defaultConfig { consumerProguardFiles("consumer-rules.pro") }
+}
 
 dependencies {
     api(project(":core:model"))
