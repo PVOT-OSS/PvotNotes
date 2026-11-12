@@ -32,6 +32,7 @@ class AlarmReceiver : BroadcastReceiver() {
                     .getEntry(snoozed)
                     ?.takeIf { it.completed == null }
                     ?.let(container.notifier::notify)
+                container.scheduler.clearSnooze(snoozed)
             } else {
                 container.scheduler.sync()
             }
@@ -51,7 +52,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
         container.notifier.cancel(taskId)
         work(context) {
             when (intent.action) {
-                ACTION_DONE -> container.repository.setCompleted(taskId, done = true)
+                ACTION_DONE -> {
+                    container.scheduler.clearSnooze(taskId)
+                    container.repository.setCompleted(taskId, done = true)
+                }
                 ACTION_SNOOZE -> container.scheduler.snooze(taskId)
             }
             container.scheduler.sync()

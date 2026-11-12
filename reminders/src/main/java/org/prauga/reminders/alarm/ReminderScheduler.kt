@@ -46,6 +46,7 @@ class ReminderScheduler(
             val due = dueBetween(all, lastCheck, now).map { it.taskId }.toSet()
             tasks.filter { it.id in due }.forEach { notifier.notify(it) }
             prefs.edit { putLong(KEY_LAST_CHECK, now.toEpochMilli()) }
+            resumeSnoozes(now)
             val next = nextAfter(all, now)
             val pending = alarmIntent(null)
             if (next == null) {
@@ -55,8 +56,36 @@ class ReminderScheduler(
             }
         }
 
+    /** Snoozes are stored so a reboot or an app update (which clear alarms) doesn't lose them. */
     fun snooze(taskId: Long, minutes: Long = SNOOZE_MINUTES) {
-        set(clock.instant().plusSeconds(minutes * 60), alarmIntent(taskId))
+        val at = clock.instant().plusSeconds(minutes * 60)
+        prefs.edit { putLong(SNOOZE_PREFIX + taskId, at.toEpochMilli()) }
+        set(at, alarmIntent(taskId))
+    }
+
+    /** Called when a snooze fires or its task is done. */
+    fun clearSnooze(taskId: Long) {
+        prefs.edit { remove(SNOOZE_PREFIX + taskId) }
+        alarmManager.cancel(alarmIntent(taskId))
+    }
+
+    /** Re-arms pending snoozes and notifies the ones that came due while no alarm was set. */
+    private suspend fun resumeSnoozes(now: Instant) {
+        prefs.all.keys
+            .filter { it.startsWith(SNOOZE_PREFIX) }
+            .forEach { key ->
+                val taskId = key.removePrefix(SNOOZE_PREFIX).toLongOrNull() ?: return@forEach
+                val at = Instant.ofEpochMilli(prefs.getLong(key, 0))
+                val task = repository.getEntry(taskId)?.takeIf { it.completed == null }
+                when {
+                    task == null -> clearSnooze(taskId)
+                    at <= now -> {
+                        notifier.notify(task)
+                        clearSnooze(taskId)
+                    }
+                    else -> set(at, alarmIntent(taskId))
+                }
+            }
     }
 
     private fun set(at: Instant, pending: PendingIntent) {
@@ -86,5 +115,6 @@ class ReminderScheduler(
     private companion object {
         const val KEY_LAST_CHECK = "last_check"
         const val SNOOZE_MINUTES = 10L
+        const val SNOOZE_PREFIX = "snooze_"
     }
 }
