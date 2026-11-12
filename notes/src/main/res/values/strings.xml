@@ -16,6 +16,7 @@
     <string name="all_notes">All</string>
     <string name="no_notes">No notes yet</string>
     <string name="no_matching_notes">No matching notes</string>
+    <string name="no_notes_in_collection">No notes in this collection yet</string>
     <string name="title">Title</string>
     <string name="note">Note</string>
     <string name="add_tag">Add tag</string>

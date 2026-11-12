@@ -208,9 +208,12 @@ private fun NoteListContent(
                 PvotEmptyContent(
                     message =
                         stringResource(
-                            if (state.query.isBlank() && state.selectedCategory == null)
-                                R.string.no_notes
-                            else R.string.no_matching_notes
+                            when {
+                                state.query.isNotBlank() || state.selectedCategory != null ->
+                                    R.string.no_matching_notes
+                                state.selectedCollection != null -> R.string.no_notes_in_collection
+                                else -> R.string.no_notes
+                            }
                         ),
                     modifier = Modifier.padding(top = 64.dp),
                 )
