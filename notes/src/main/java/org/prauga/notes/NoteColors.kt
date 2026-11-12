@@ -9,9 +9,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
@@ -46,28 +46,31 @@ enum class NoteColor(val argb: Int, @StringRes val label: Int) {
 fun noteContainerColor(argb: Int): Color =
     Color(argb).copy(alpha = 0.3f).compositeOver(MaterialTheme.colorScheme.surface)
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NoteColorRow(selected: Int?, onSelect: (Int?) -> Unit, modifier: Modifier = Modifier) {
     val outline = MaterialTheme.colorScheme.outline
     val ring = MaterialTheme.colorScheme.onSurface
-    LazyRow(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
-            val label = stringResource(R.string.color_none)
-            Swatch(selected == null, ring, label, { onSelect(null) }) {
-                Box(
-                    Modifier.size(32.dp).border(BorderStroke(1.dp, outline), CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_close),
-                        null,
-                        Modifier.size(16.dp),
-                        tint = outline,
-                    )
-                }
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        val label = stringResource(R.string.color_none)
+        Swatch(selected == null, ring, label, { onSelect(null) }) {
+            Box(
+                Modifier.size(32.dp).border(BorderStroke(1.dp, outline), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_close),
+                    null,
+                    Modifier.size(16.dp),
+                    tint = outline,
+                )
             }
         }
-        items(NoteColor.entries) { color ->
+        NoteColor.entries.forEach { color ->
             val label = stringResource(color.label)
             Swatch(selected == color.argb, ring, label, { onSelect(color.argb) }) {
                 Box(Modifier.size(32.dp).background(Color(color.argb), CircleShape))
