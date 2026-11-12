@@ -30,6 +30,8 @@ rootProject.name = "Notes"
 
 include(":notes")
 
+include(":reminders")
+
 include(":core:model")
 
 include(":core:ical")

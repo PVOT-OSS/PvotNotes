@@ -29,3 +29,9 @@ path = ["fastlane/metadata/android/**/*.txt", "fastlane/metadata/android/**/*.pn
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Saalim Quadri <danascape@gmail.com>"
 SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = ["reminders/src/main/res/drawable/ic_add.xml", "reminders/src/main/res/drawable/ic_alarm.xml", "reminders/src/main/res/drawable/ic_close.xml", "reminders/src/main/res/drawable/ic_delete.xml", "reminders/src/main/res/drawable/ic_event.xml", "reminders/src/main/res/drawable/ic_expand_less.xml", "reminders/src/main/res/drawable/ic_expand_more.xml", "reminders/src/main/res/drawable/ic_flag.xml", "reminders/src/main/res/drawable/ic_repeat.xml", "reminders/src/main/res/drawable/ic_schedule.xml", "reminders/src/main/res/drawable/ic_stat_reminder.xml"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Google LLC (Material Icons)"
+SPDX-License-Identifier = "Apache-2.0"

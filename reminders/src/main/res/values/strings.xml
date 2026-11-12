@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="app_name">Reminders</string>
+    <string name="default_collection">Reminders</string>
+    <string name="new_reminder">New reminder</string>
+    <string name="quick_reminder">Quick reminder</string>
+    <string name="add_reminder_item">Add reminder</string>
+    <string name="no_reminders">Nothing to do</string>
+    <string name="section_overdue">Overdue</string>
+    <string name="section_today">Today</string>
+    <string name="section_upcoming">Upcoming</string>
+    <string name="section_no_date">No date</string>
+    <string name="section_completed">Completed (%1$d)</string>
+    <string name="today">Today</string>
+    <string name="tomorrow">Tomorrow</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="mark_done">Mark %1$s done</string>
+    <string name="mark_not_done">Mark %1$s not done</string>
+    <string name="subtask_progress">%1$d/%2$d</string>
+    <string name="title">Title</string>
+    <string name="notes">Notes</string>
+    <string name="due">Due</string>
+    <string name="pick_date">Pick a date</string>
+    <string name="add_time">Add a time</string>
+    <string name="remove_date">Remove date</string>
+    <string name="remove_time">Remove time</string>
+    <string name="repeat">Repeat</string>
+    <string name="repeat_none">Doesn\'t repeat</string>
+    <string name="repeat_daily">Every day</string>
+    <string name="repeat_weekdays">Every weekday</string>
+    <string name="repeat_weekly">Every week</string>
+    <string name="repeat_monthly">Every month</string>
+    <string name="repeat_yearly">Every year</string>
+    <string name="repeat_custom">Custom: %1$s</string>
+    <string name="reminders">Reminders</string>
+    <string name="alarm_at_due">At the due time</string>
+    <plurals name="alarm_minutes_before">
+        <item quantity="one">%d minute before</item>
+        <item quantity="other">%d minutes before</item>
+    </plurals>
+    <plurals name="alarm_hours_before">
+        <item quantity="one">%d hour before</item>
+        <item quantity="other">%d hours before</item>
+    </plurals>
+    <plurals name="alarm_days_before">
+        <item quantity="one">%d day before</item>
+        <item quantity="other">%d days before</item>
+    </plurals>
+    <string name="alarm_add">Add a reminder</string>
+    <string name="alarm_needs_date">Set a due date to add reminders</string>
+    <string name="remove_alarm">Remove reminder %1$s</string>
+    <string name="priority">Priority</string>
+    <string name="priority_none">None</string>
+    <string name="priority_low">Low</string>
+    <string name="priority_medium">Medium</string>
+    <string name="priority_high">High</string>
+    <string name="subtasks">Subtasks</string>
+    <string name="add_subtask">Add a subtask</string>
+    <string name="remove_subtask">Remove subtask %1$s</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="done">Done</string>
+    <string name="snooze">Snooze 10 min</string>
+    <string name="delete_task_title">Delete this reminder?</string>
+    <string name="delete_task_message">Its subtasks will be deleted too.</string>
+    <string name="exact_alarm_title">Let reminders ring on time</string>
+    <string name="exact_alarm_message">Without the alarms and reminders permission, Android may deliver reminders a few minutes late.</string>
+    <string name="exact_alarm_allow">Allow</string>
+    <string name="notifications_off">Notifications are off, so reminders can\'t show.</string>
+    <string name="notification_channel">Reminders</string>
+    <string name="notification_channel_description">Reminders for your tasks when they\'re due</string>
+    <string name="notification_due">Due %1$s</string>
+    <string name="edited_just_now">Edited just now</string>
+    <string name="edited_at">Edited %1$s</string>
+</resources>
