@@ -66,11 +66,18 @@ class NoteListViewModel(
     private val controls = MutableStateFlow(ListControls(layout = preferences.layout))
 
     private val collections = repository.observeCollectionCounts(Component.VJOURNAL)
-    private val categories = repository.observeCategories(Component.VJOURNAL)
 
-    // A selected collection or tag can disappear (deleted collection, last note untagged); drop it
-    // then,
-    // or the query keeps filtering on something the UI no longer shows.
+    // A selected collection or tag can disappear (deleted collection, last note untagged): drop it,
+    // or the query keeps filtering on something the UI no longer shows. Tags follow the collection.
+    private val selectedCollection =
+        combine(controls, collections) { controls, collections ->
+                controls.collection?.takeIf { id -> collections.any { it.id == id } }
+            }
+            .distinctUntilChanged()
+
+    private val categories =
+        selectedCollection.flatMapLatest { repository.observeCategories(Component.VJOURNAL, it) }
+
     private val effectiveControls =
         combine(controls, collections, categories) { controls, collections, categories ->
             controls.dropMissing(

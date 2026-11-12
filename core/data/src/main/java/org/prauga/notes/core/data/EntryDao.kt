@@ -47,10 +47,11 @@ interface EntryDao {
         SELECT categories.name AS name, COUNT(*) AS count FROM categories
         JOIN entries ON entries.id = categories.entry_id
         WHERE entries.component = :component
+          AND (:collectionId IS NULL OR entries.collection_id = :collectionId)
         GROUP BY categories.name ORDER BY categories.name COLLATE NOCASE
         """
     )
-    fun observeCategories(component: String): Flow<List<CategoryCount>>
+    fun observeCategories(component: String, collectionId: Long?): Flow<List<CategoryCount>>
 
     @Insert suspend fun insert(entry: EntryEntity): Long
 

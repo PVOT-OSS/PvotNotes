@@ -38,8 +38,10 @@ class EntryRepository(
 
     suspend fun getEntryByUid(uid: String): Entry? = entries.getByUid(uid)?.toModel()
 
-    fun observeCategories(component: Component): Flow<List<CategoryCount>> =
-        entries.observeCategories(component.name)
+    fun observeCategories(
+        component: Component,
+        collectionId: Long? = null,
+    ): Flow<List<CategoryCount>> = entries.observeCategories(component.name, collectionId)
 
     fun observeCollections(): Flow<List<EntryCollection>> =
         collections.observeAll().map { list -> list.map { it.toModel() } }
