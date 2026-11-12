@@ -23,9 +23,14 @@ import net.fortuna.ical4j.model.Property
 import net.fortuna.ical4j.model.TextList
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory
 import net.fortuna.ical4j.model.component.CalendarComponent
+import net.fortuna.ical4j.model.component.VAlarm
 import net.fortuna.ical4j.model.component.VJournal
 import net.fortuna.ical4j.model.component.VToDo
+import net.fortuna.ical4j.model.parameter.RelType
+import net.fortuna.ical4j.model.parameter.Related
 import net.fortuna.ical4j.model.parameter.TzId
+import net.fortuna.ical4j.model.property.Action
+import net.fortuna.ical4j.model.property.Attach
 import net.fortuna.ical4j.model.property.Categories
 import net.fortuna.ical4j.model.property.Clazz
 import net.fortuna.ical4j.model.property.Color
@@ -40,10 +45,15 @@ import net.fortuna.ical4j.model.property.LastModified
 import net.fortuna.ical4j.model.property.PercentComplete
 import net.fortuna.ical4j.model.property.Priority
 import net.fortuna.ical4j.model.property.ProdId
+import net.fortuna.ical4j.model.property.RRule
+import net.fortuna.ical4j.model.property.RelatedTo
 import net.fortuna.ical4j.model.property.Sequence
 import net.fortuna.ical4j.model.property.Summary
+import net.fortuna.ical4j.model.property.Trigger
 import net.fortuna.ical4j.model.property.Uid
 import net.fortuna.ical4j.model.property.immutable.ImmutableVersion
+import org.prauga.notes.core.model.Alarm
+import org.prauga.notes.core.model.Attachment
 import org.prauga.notes.core.model.Classification
 import org.prauga.notes.core.model.Component
 import org.prauga.notes.core.model.Entry
@@ -107,9 +117,27 @@ object ICalMapper {
                     entry.percentComplete?.let { add(PercentComplete(it)) }
                 }
                 entry.status?.let { add(net.fortuna.ical4j.model.property.Status(it.value)) }
+                entry.rrule?.let { add(RRule<Temporal>(it)) }
+                entry.parentUid?.let { add(RelatedTo(it)) }
+                entry.attachments.forEach { add(Attach(ParameterList(), it.uri)) }
                 entry.classification?.let { add(Clazz(it.value)) }
             }
         properties.forEach { component.add<ICalComponent>(it) }
+        if (component is VToDo) {
+            entry.alarms.forEach { alarm ->
+                val valarm = VAlarm()
+                val related = if (entry.due != null) Related.END else Related.START
+                valarm.add<VAlarm>(
+                    Trigger(
+                        ParameterList(listOf(related)),
+                        Recurrence.duration(-alarm.minutesBefore),
+                    )
+                )
+                valarm.add<VAlarm>(Action(Action.VALUE_DISPLAY))
+                valarm.add<VAlarm>(Description(entry.summary.ifEmpty { " " }))
+                component.add<VToDo>(valarm)
+            }
+        }
         return component
     }
 
@@ -142,8 +170,35 @@ object ICalMapper {
             lastModified = component.instant(Property.LAST_MODIFIED) ?: stamp,
             sequence = component.text(Property.SEQUENCE)?.toIntOrNull() ?: 0,
             color = component.text(COLOR)?.let(Css3Colors::argb),
+            rrule = component.text(Property.RRULE),
+            parentUid = component.parentUid(),
+            alarms = (component as? VToDo)?.alarms().orEmpty(),
+            attachments =
+                component.getProperties<Attach>(Property.ATTACH).mapNotNull { attach ->
+                    attach.value?.takeIf { it.isNotBlank() }?.let { Attachment(it) }
+                },
         )
     }
+
+    private fun ICalComponent.parentUid(): String? =
+        getProperties<RelatedTo>(Property.RELATED_TO)
+            .firstOrNull { related ->
+                related
+                    .getParameter<RelType>(Parameter.RELTYPE)
+                    .map { it.value }
+                    .orElse("PARENT") == "PARENT"
+            }
+            ?.value
+
+    private fun VToDo.alarms(): List<Alarm> =
+        getComponents<VAlarm>(ICalComponent.VALARM).mapNotNull { alarm ->
+            alarm
+                .getProperty<Trigger>(Property.TRIGGER)
+                .map { it.value }
+                .orElse(null)
+                ?.let(Recurrence::durationMinutes)
+                ?.let { Alarm(-it) }
+        }
 
     private fun ICalComponent.text(name: String): String? =
         getProperty<Property>(name).map { it.value }.orElse(null)?.takeIf { it.isNotEmpty() }

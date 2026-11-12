@@ -7,6 +7,7 @@ import java.time.Clock
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import org.prauga.notes.core.ical.TaskCompletion
 import org.prauga.notes.core.model.Component
 import org.prauga.notes.core.model.Entry
 import org.prauga.notes.core.model.EntryCollection
@@ -15,6 +16,7 @@ data class EntryFilter(
     val collectionId: Long? = null,
     val category: String? = null,
     val query: String = "",
+    val topLevelOnly: Boolean = false,
 )
 
 class EntryRepository(
@@ -29,7 +31,13 @@ class EntryRepository(
         filter: EntryFilter = EntryFilter(),
     ): Flow<List<Entry>> =
         entries
-            .observe(component.name, filter.collectionId, filter.category, ftsMatch(filter.query))
+            .observe(
+                component.name,
+                filter.collectionId,
+                filter.category,
+                ftsMatch(filter.query),
+                filter.topLevelOnly,
+            )
             .map { list -> list.map { it.toModel() } }
 
     fun observeEntry(id: Long): Flow<Entry?> = entries.observeById(id).map { it?.toModel() }
@@ -83,10 +91,42 @@ class EntryRepository(
                 sequence =
                     if (existing != null && newRevision) existing.sequence + 1 else entry.sequence,
             )
-        return entries.save(saved.toEntity(), categories)
+        return entries.save(
+            saved.toEntity(),
+            categories,
+            saved.alarms.map { it.minutesBefore }.distinct().sorted(),
+            saved.attachments.map {
+                AttachmentEntity(
+                    entryId = 0,
+                    uri = it.uri,
+                    mimeType = it.mimeType,
+                    name = it.name,
+                    position = 0,
+                )
+            },
+        )
     }
 
-    suspend fun delete(id: Long) = entries.delete(id)
+    suspend fun delete(id: Long) {
+        val entry = entries.getById(id)?.entry ?: return
+        entries.deleteWithChildren(entry.id, entry.uid)
+    }
+
+    fun observeChildren(parentUid: String): Flow<List<Entry>> =
+        entries.observeChildren(parentUid).map { list -> list.map { it.toModel() } }
+
+    suspend fun openWithAlarms(component: Component): List<Entry> =
+        entries.getOpenWithAlarms(component.name).map { it.toModel() }
+
+    /** Completes or reopens a task; a repeating one moves to its next date instead. */
+    suspend fun setCompleted(id: Long, done: Boolean): Entry? {
+        val task = getEntry(id) ?: return null
+        val updated =
+            if (done) TaskCompletion.complete(task, clock.instant())
+            else TaskCompletion.reopen(task)
+        save(updated)
+        return getEntry(id)
+    }
 
     companion object {
         internal fun ftsMatch(query: String): String? =

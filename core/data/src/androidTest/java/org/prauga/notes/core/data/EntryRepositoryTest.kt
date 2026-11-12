@@ -6,6 +6,7 @@ package org.prauga.notes.core.data
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlinx.coroutines.flow.first
@@ -16,9 +17,12 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.prauga.notes.core.model.Alarm
+import org.prauga.notes.core.model.Attachment
 import org.prauga.notes.core.model.Component
 import org.prauga.notes.core.model.EntryCollection
 import org.prauga.notes.core.model.EntryTime
+import org.prauga.notes.core.model.Status
 
 @RunWith(AndroidJUnit4::class)
 class EntryRepositoryTest {
@@ -135,5 +139,72 @@ class EntryRepositoryTest {
                 .map { it.summary }
                 .sorted(),
         )
+    }
+
+    @Test
+    fun keepsSubtasksAlarmsAndAttachments() = runTest {
+        val collection = repository.defaultCollection("Tasks")
+        val parent =
+            repository
+                .newEntry(Component.VTODO, collection.id)
+                .copy(summary = "Trip", alarms = listOf(Alarm(60), Alarm(0), Alarm(60)))
+        val parentId = repository.save(parent)
+        repository.save(
+            repository
+                .newEntry(Component.VTODO, collection.id)
+                .copy(summary = "Pack", parentUid = parent.uid)
+        )
+        val journal =
+            repository
+                .newEntry(Component.VJOURNAL, collection.id)
+                .copy(
+                    attachments =
+                        listOf(
+                            Attachment("attachments/a.jpg", "image/jpeg"),
+                            Attachment("attachments/b.jpg"),
+                        )
+                )
+        val journalId = repository.save(journal)
+
+        assertEquals(listOf(Alarm(0), Alarm(60)), repository.getEntry(parentId)!!.alarms)
+        assertEquals(journal.attachments, repository.getEntry(journalId)!!.attachments)
+        assertEquals(
+            listOf("Pack"),
+            repository.observeChildren(parent.uid).first().map { it.summary },
+        )
+        assertEquals(
+            listOf("Trip"),
+            repository
+                .observeEntries(Component.VTODO, EntryFilter(topLevelOnly = true))
+                .first()
+                .map { it.summary },
+        )
+        assertEquals(listOf("Trip"), repository.openWithAlarms(Component.VTODO).map { it.summary })
+
+        repository.delete(parentId)
+        assertEquals(
+            emptyList<String>(),
+            repository.observeEntries(Component.VTODO).first().map { it.summary },
+        )
+    }
+
+    @Test
+    fun completingARepeatingTaskMovesItOn() = runTest {
+        val collection = repository.defaultCollection("Tasks")
+        val id =
+            repository.save(
+                repository
+                    .newEntry(Component.VTODO, collection.id)
+                    .copy(
+                        summary = "Bins",
+                        rrule = "FREQ=WEEKLY",
+                        due = EntryTime.Date(LocalDate.of(2026, 11, 13)),
+                    )
+            )
+        val next = repository.setCompleted(id, done = true)!!
+        assertEquals(EntryTime.Date(LocalDate.of(2026, 11, 20)), next.due)
+        assertNull(next.completed)
+        repository.save(next.copy(rrule = null))
+        assertEquals(Status.COMPLETED, repository.setCompleted(id, done = true)!!.status)
     }
 }

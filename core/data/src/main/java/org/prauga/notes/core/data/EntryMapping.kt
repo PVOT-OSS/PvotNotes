@@ -7,6 +7,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import org.prauga.notes.core.model.Alarm
+import org.prauga.notes.core.model.Attachment
 import org.prauga.notes.core.model.Classification
 import org.prauga.notes.core.model.Component
 import org.prauga.notes.core.model.Entry
@@ -33,9 +35,11 @@ internal fun Entry.toEntity() =
         created = created.toEpochMilli(),
         lastModified = lastModified.toEpochMilli(),
         sequence = sequence,
+        parentUid = parentUid,
+        rrule = rrule,
     )
 
-internal fun EntryWithCategories.toModel() =
+internal fun EntryWithRelations.toModel() =
     Entry(
         id = entry.id,
         uid = entry.uid,
@@ -55,6 +59,11 @@ internal fun EntryWithCategories.toModel() =
         created = Instant.ofEpochMilli(entry.created),
         lastModified = Instant.ofEpochMilli(entry.lastModified),
         sequence = entry.sequence,
+        parentUid = entry.parentUid,
+        rrule = entry.rrule,
+        alarms = alarms.map { Alarm(it.minutesBefore) }.sortedBy { it.minutesBefore },
+        attachments =
+            attachments.sortedBy { it.position }.map { Attachment(it.uri, it.mimeType, it.name) },
     )
 
 internal fun CollectionEntity.toModel() = EntryCollection(id = id, name = name, color = color)

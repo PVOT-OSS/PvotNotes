@@ -11,6 +11,8 @@ import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.prauga.notes.core.model.Alarm
+import org.prauga.notes.core.model.Attachment
 import org.prauga.notes.core.model.Classification
 import org.prauga.notes.core.model.Component
 import org.prauga.notes.core.model.Entry
@@ -133,5 +135,39 @@ class ICalMapperTest {
 
         val foreign = text.replace("COLOR:tomato", "COLOR:Not-A-Colour")
         assertEquals(null, ICalMapper.fromICalendar(foreign, 1).single().color)
+    }
+
+    @Test
+    fun taskWithRepeatParentAndAlarmsRoundTrips() {
+        val task =
+            entry(Component.VTODO)
+                .copy(
+                    summary = "Water plants",
+                    due =
+                        EntryTime.DateTime(
+                            LocalDateTime.of(2026, 11, 14, 18, 0),
+                            ZoneId.of("Asia/Kolkata"),
+                        ),
+                    rrule = "FREQ=WEEKLY;BYDAY=SA",
+                    parentUid = "parent-1",
+                    alarms = listOf(Alarm(0), Alarm(15), Alarm(24 * 60)),
+                )
+        val text = ICalMapper.toICalendar(listOf(task))
+        assertTrue(text, text.contains("RRULE:FREQ=WEEKLY;BYDAY=SA"))
+        assertTrue(text, text.contains("RELATED-TO:parent-1"))
+        assertTrue(text, text.contains("TRIGGER;RELATED=END:-PT15M"))
+        assertTrue(text, text.contains("BEGIN:VALARM"))
+        assertEquals(task, roundTrip(task))
+    }
+
+    @Test
+    fun journalAttachmentsRoundTrip() {
+        val journal =
+            entry(Component.VJOURNAL)
+                .copy(
+                    attachments =
+                        listOf(Attachment("attachments/a.jpg"), Attachment("attachments/b.png"))
+                )
+        assertEquals(journal, roundTrip(journal))
     }
 }

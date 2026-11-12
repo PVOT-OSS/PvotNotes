@@ -37,7 +37,12 @@ data class TimeColumns(
             )
         ],
     indices =
-        [Index("uid", unique = true), Index("collection_id"), Index("component", "last_modified")],
+        [
+            Index("uid", unique = true),
+            Index("collection_id"),
+            Index("component", "last_modified"),
+            Index("parent_uid"),
+        ],
 )
 data class EntryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -57,6 +62,8 @@ data class EntryEntity(
     val created: Long,
     @ColumnInfo(name = "last_modified") val lastModified: Long,
     val sequence: Int,
+    @ColumnInfo(name = "parent_uid", defaultValue = "NULL") val parentUid: String? = null,
+    @ColumnInfo(defaultValue = "NULL") val rrule: String? = null,
 )
 
 @Fts4(contentEntity = EntryEntity::class)
@@ -83,11 +90,55 @@ data class CategoryEntity(
     val position: Int,
 )
 
-data class EntryWithCategories(
+data class EntryWithRelations(
     @Embedded val entry: EntryEntity,
     @Relation(parentColumn = "id", entityColumn = "entry_id") val categories: List<CategoryEntity>,
+    @Relation(parentColumn = "id", entityColumn = "entry_id") val alarms: List<AlarmEntity>,
+    @Relation(parentColumn = "id", entityColumn = "entry_id")
+    val attachments: List<AttachmentEntity>,
 )
 
 data class CategoryCount(val name: String, val count: Int)
 
 data class CollectionCount(val id: Long, val name: String, val color: Int?, val count: Int)
+
+@Entity(
+    tableName = "alarms",
+    foreignKeys =
+        [
+            ForeignKey(
+                entity = EntryEntity::class,
+                parentColumns = ["id"],
+                childColumns = ["entry_id"],
+                onDelete = ForeignKey.CASCADE,
+            )
+        ],
+    indices = [Index("entry_id")],
+)
+data class AlarmEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "entry_id") val entryId: Long,
+    @ColumnInfo(name = "minutes_before") val minutesBefore: Int,
+)
+
+@Entity(
+    tableName = "attachments",
+    foreignKeys =
+        [
+            ForeignKey(
+                entity = EntryEntity::class,
+                parentColumns = ["id"],
+                childColumns = ["entry_id"],
+                onDelete = ForeignKey.CASCADE,
+            )
+        ],
+    indices = [Index("entry_id")],
+)
+data class AttachmentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "entry_id") val entryId: Long,
+    val uri: String,
+    @ColumnInfo(name = "mime_type") val mimeType: String?,
+    val name: String?,
+    val position: Int,
+)

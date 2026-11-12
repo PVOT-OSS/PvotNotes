@@ -24,4 +24,8 @@ data class Entry(
     val created: Instant,
     val lastModified: Instant,
     val sequence: Int = 0,
+    val parentUid: String? = null,
+    val rrule: String? = null,
+    val alarms: List<Alarm> = emptyList(),
+    val attachments: List<Attachment> = emptyList(),
 )

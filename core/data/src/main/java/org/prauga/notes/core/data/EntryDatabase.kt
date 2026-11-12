@@ -4,14 +4,23 @@
 package org.prauga.notes.core.data
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
     entities =
-        [CollectionEntity::class, EntryEntity::class, EntryFts::class, CategoryEntity::class],
-    version = 1,
+        [
+            CollectionEntity::class,
+            EntryEntity::class,
+            EntryFts::class,
+            CategoryEntity::class,
+            AlarmEntity::class,
+            AttachmentEntity::class,
+        ],
+    version = 2,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 abstract class EntryDatabase : RoomDatabase() {
     abstract fun entryDao(): EntryDao
