@@ -6,6 +6,9 @@ package org.prauga.reminders
 import android.content.Intent
 import android.content.pm.ShortcutManager
 import android.os.Bundle
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -20,7 +23,14 @@ class MainActivity : PvotBaseActivity() {
         if (savedInstanceState == null) request = intent.toEditorRequest()
         setPvotContent {
             PvotAppTheme {
-                RemindersNavigation(request = request, onRequestHandled = { request = null })
+                // PvotScreenScaffold sets no content colour; without this, untinted icons and text
+                // are
+                // black, invisible in the dark theme.
+                CompositionLocalProvider(
+                    LocalContentColor provides MaterialTheme.colorScheme.onBackground
+                ) {
+                    RemindersNavigation(request = request, onRequestHandled = { request = null })
+                }
             }
         }
     }
