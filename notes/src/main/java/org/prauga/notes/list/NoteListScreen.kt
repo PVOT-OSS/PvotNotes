@@ -54,8 +54,8 @@ import com.prauga.pvot.designsystem.navigation.PvotTopBar
 import com.prauga.pvot.designsystem.navigation.PvotTopBarAction
 import org.prauga.notes.R
 import org.prauga.notes.core.model.Entry
+import org.prauga.notes.core.ui.entryContainerColor
 import org.prauga.notes.core.ui.markdown.MarkdownText
-import org.prauga.notes.noteContainerColor
 
 @Composable
 fun NoteListScreen(
@@ -230,7 +230,7 @@ private fun NoteCard(note: Entry, onClick: () -> Unit) {
     PvotCard(
         onClick = onClick,
         colors =
-            note.color?.let { PvotCardDefaults.colors(containerColor = noteContainerColor(it)) }
+            note.color?.let { PvotCardDefaults.colors(containerColor = entryContainerColor(it)) }
                 ?: PvotCardDefaults.colors(),
         modifier = Modifier.fillMaxWidth(),
     ) {

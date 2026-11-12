@@ -19,7 +19,7 @@ SPDX-FileCopyrightText = "2007-2023 Gradle, Inc."
 SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
-path = ["notes/src/main/res/drawable/ic_add.xml", "notes/src/main/res/drawable/ic_arrow_drop_down.xml", "notes/src/main/res/drawable/ic_folder.xml", "notes/src/main/res/drawable/ic_close.xml", "notes/src/main/res/drawable/ic_check.xml", "notes/src/main/res/drawable/ic_delete.xml", "notes/src/main/res/drawable/ic_edit.xml", "notes/src/main/res/drawable/ic_grid_view.xml", "notes/src/main/res/drawable/ic_search.xml", "notes/src/main/res/drawable/ic_share.xml", "notes/src/main/res/drawable/ic_shortcut_new_note.xml", "notes/src/main/res/drawable/ic_view_list.xml"]
+path = ["notes/src/main/res/drawable/ic_add.xml", "notes/src/main/res/drawable/ic_arrow_drop_down.xml", "notes/src/main/res/drawable/ic_folder.xml", "notes/src/main/res/drawable/ic_close.xml", "core/ui/src/main/res/drawable/ui_ic_close.xml", "notes/src/main/res/drawable/ic_check.xml", "notes/src/main/res/drawable/ic_delete.xml", "notes/src/main/res/drawable/ic_edit.xml", "notes/src/main/res/drawable/ic_grid_view.xml", "notes/src/main/res/drawable/ic_search.xml", "notes/src/main/res/drawable/ic_share.xml", "notes/src/main/res/drawable/ic_shortcut_new_note.xml", "notes/src/main/res/drawable/ic_view_list.xml"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Google LLC (Material Icons)"
 SPDX-License-Identifier = "Apache-2.0"

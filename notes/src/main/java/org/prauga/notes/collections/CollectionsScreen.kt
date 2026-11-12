@@ -35,9 +35,9 @@ import com.prauga.pvot.designsystem.components.list.PvotListGroup
 import com.prauga.pvot.designsystem.components.list.PvotListRow
 import com.prauga.pvot.designsystem.components.textfield.PvotTextField
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
-import org.prauga.notes.NoteColorRow
 import org.prauga.notes.R
 import org.prauga.notes.core.data.CollectionCount
+import org.prauga.notes.core.ui.EntryColorRow
 
 private data class CollectionDraft(val id: Long = 0, val name: String = "", val color: Int? = null)
 
@@ -124,7 +124,7 @@ fun CollectionsScreen(viewModel: CollectionsViewModel, onBack: () -> Unit) {
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                NoteColorRow(
+                EntryColorRow(
                     selected = color,
                     onSelect = { color = it },
                     modifier = Modifier.padding(top = 12.dp),

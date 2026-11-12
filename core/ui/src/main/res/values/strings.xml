@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="ui_color_none">No colour</string>
+    <string name="ui_color_red">Red</string>
+    <string name="ui_color_orange">Orange</string>
+    <string name="ui_color_yellow">Yellow</string>
+    <string name="ui_color_green">Green</string>
+    <string name="ui_color_teal">Teal</string>
+    <string name="ui_color_blue">Blue</string>
+    <string name="ui_color_purple">Purple</string>
+    <string name="ui_color_pink">Pink</string>
+</resources>

@@ -20,9 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
@@ -41,15 +38,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.designsystem.components.PvotDialog
@@ -58,9 +51,10 @@ import com.prauga.pvot.designsystem.components.PvotDialogActionStyle
 import com.prauga.pvot.designsystem.components.PvotScreenScaffold
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
 import com.prauga.pvot.designsystem.navigation.PvotTopBarAction
-import org.prauga.notes.NoteColorRow
 import org.prauga.notes.R
 import org.prauga.notes.core.model.EntryCollection
+import org.prauga.notes.core.ui.EntryColorRow
+import org.prauga.notes.core.ui.PlainTextField
 import org.prauga.notes.core.ui.markdown.MarkdownText
 
 @Composable
@@ -161,7 +155,7 @@ private fun EditorContent(
             LaunchedEffect(Unit) {
                 if (state.focusTitle) titleFocus.requestFocus() else bodyFocus.requestFocus()
             }
-            PlainField(
+            PlainTextField(
                 value = state.title,
                 onValueChange = { value ->
                     viewModel.setTitle(value.replace("\n", ""))
@@ -174,7 +168,7 @@ private fun EditorContent(
                 modifier = Modifier.fillMaxWidth().focusRequester(titleFocus),
             )
             Spacer(Modifier.height(12.dp))
-            PlainField(
+            PlainTextField(
                 value = state.body,
                 onValueChange = viewModel::setBody,
                 placeholder = stringResource(R.string.note),
@@ -235,13 +229,13 @@ private fun EditorContent(
                 modifier = Modifier.padding(top = 12.dp),
             )
         }
-        NoteColorRow(
+        EntryColorRow(
             selected = state.color,
             onSelect = viewModel::setColor,
             modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
         )
         var newTag by rememberSaveable { mutableStateOf("") }
-        PlainField(
+        PlainTextField(
             value = newTag,
             onValueChange = { value ->
                 if (value.endsWith(',')) {
@@ -284,77 +278,6 @@ private fun EditorContent(
             )
         }
     }
-}
-
-@Composable
-private fun PlainField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    style: TextStyle,
-    modifier: Modifier = Modifier,
-    singleLine: Boolean = false,
-    capitalization: KeyboardCapitalization = KeyboardCapitalization.Sentences,
-    imeAction: ImeAction = ImeAction.Default,
-    onImeAction: () -> Unit = {},
-) {
-    var field by remember { mutableStateOf(TextFieldValue(value, TextRange(value.length))) }
-    val current = if (field.text == value) field else TextFieldValue(value, TextRange(value.length))
-    PlainField(
-        value = current,
-        onValueChange = {
-            field = it
-            if (it.text != value) onValueChange(it.text)
-        },
-        placeholder = placeholder,
-        style = style,
-        modifier = modifier,
-        singleLine = singleLine,
-        capitalization = capitalization,
-        imeAction = imeAction,
-        onImeAction = onImeAction,
-    )
-}
-
-@Composable
-private fun PlainField(
-    value: TextFieldValue,
-    onValueChange: (TextFieldValue) -> Unit,
-    placeholder: String,
-    style: TextStyle,
-    modifier: Modifier = Modifier,
-    singleLine: Boolean = false,
-    capitalization: KeyboardCapitalization = KeyboardCapitalization.Sentences,
-    imeAction: ImeAction = ImeAction.Default,
-    onImeAction: () -> Unit = {},
-) {
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        textStyle = style,
-        singleLine = singleLine,
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        keyboardOptions =
-            KeyboardOptions(
-                capitalization = capitalization,
-                autoCorrectEnabled = capitalization != KeyboardCapitalization.None,
-                imeAction = imeAction,
-            ),
-        keyboardActions = KeyboardActions(onAny = { onImeAction() }),
-        modifier = modifier,
-        decorationBox = { inner ->
-            if (value.text.isEmpty()) {
-                Text(
-                    placeholder,
-                    style =
-                        style.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        ),
-                )
-            }
-            inner()
-        },
-    )
 }
 
 @Composable

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
-package org.prauga.notes
+package org.prauga.notes.core.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
@@ -31,24 +31,24 @@ import androidx.compose.ui.unit.dp
 /**
  * Each colour is a CSS3 keyword (tomato, orange, gold, …) so it survives iCalendar COLOR exactly.
  */
-enum class NoteColor(val argb: Int, @StringRes val label: Int) {
-    RED(0xFFFF6347.toInt(), R.string.color_red),
-    ORANGE(0xFFFFA500.toInt(), R.string.color_orange),
-    YELLOW(0xFFFFD700.toInt(), R.string.color_yellow),
-    GREEN(0xFF3CB371.toInt(), R.string.color_green),
-    TEAL(0xFF20B2AA.toInt(), R.string.color_teal),
-    BLUE(0xFF6495ED.toInt(), R.string.color_blue),
-    PURPLE(0xFFBA55D3.toInt(), R.string.color_purple),
-    PINK(0xFFFF69B4.toInt(), R.string.color_pink),
+enum class EntryColor(val argb: Int, @StringRes val label: Int) {
+    RED(0xFFFF6347.toInt(), R.string.ui_color_red),
+    ORANGE(0xFFFFA500.toInt(), R.string.ui_color_orange),
+    YELLOW(0xFFFFD700.toInt(), R.string.ui_color_yellow),
+    GREEN(0xFF3CB371.toInt(), R.string.ui_color_green),
+    TEAL(0xFF20B2AA.toInt(), R.string.ui_color_teal),
+    BLUE(0xFF6495ED.toInt(), R.string.ui_color_blue),
+    PURPLE(0xFFBA55D3.toInt(), R.string.ui_color_purple),
+    PINK(0xFFFF69B4.toInt(), R.string.ui_color_pink),
 }
 
 @Composable
-fun noteContainerColor(argb: Int): Color =
+fun entryContainerColor(argb: Int): Color =
     Color(argb).copy(alpha = 0.3f).compositeOver(MaterialTheme.colorScheme.surface)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun NoteColorRow(selected: Int?, onSelect: (Int?) -> Unit, modifier: Modifier = Modifier) {
+fun EntryColorRow(selected: Int?, onSelect: (Int?) -> Unit, modifier: Modifier = Modifier) {
     val outline = MaterialTheme.colorScheme.outline
     val ring = MaterialTheme.colorScheme.onSurface
     FlowRow(
@@ -56,21 +56,21 @@ fun NoteColorRow(selected: Int?, onSelect: (Int?) -> Unit, modifier: Modifier = 
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        val label = stringResource(R.string.color_none)
+        val label = stringResource(R.string.ui_color_none)
         Swatch(selected == null, ring, label, { onSelect(null) }) {
             Box(
                 Modifier.size(32.dp).border(BorderStroke(1.dp, outline), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painterResource(R.drawable.ic_close),
+                    painterResource(R.drawable.ui_ic_close),
                     null,
                     Modifier.size(16.dp),
                     tint = outline,
                 )
             }
         }
-        NoteColor.entries.forEach { color ->
+        EntryColor.entries.forEach { color ->
             val label = stringResource(color.label)
             Swatch(selected == color.argb, ring, label, { onSelect(color.argb) }) {
                 Box(Modifier.size(32.dp).background(Color(color.argb), CircleShape))

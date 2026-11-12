@@ -25,15 +25,6 @@
     <string name="edited_at">Edited %1$s</string>
     <string name="edit">Edit</string>
     <string name="done">Done</string>
-    <string name="color_none">No colour</string>
-    <string name="color_red">Red</string>
-    <string name="color_orange">Orange</string>
-    <string name="color_yellow">Yellow</string>
-    <string name="color_green">Green</string>
-    <string name="color_teal">Teal</string>
-    <string name="color_blue">Blue</string>
-    <string name="color_purple">Purple</string>
-    <string name="color_pink">Pink</string>
     <string name="collections">Collections</string>
     <string name="all_collections">All</string>
     <string name="collection">Collection</string>
