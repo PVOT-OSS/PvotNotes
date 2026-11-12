@@ -32,6 +32,8 @@ include(":notes")
 
 include(":reminders")
 
+include(":journal")
+
 include(":core:model")
 
 include(":core:ical")

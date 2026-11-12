@@ -35,3 +35,9 @@ path = ["reminders/src/main/res/drawable/ic_add.xml", "reminders/src/main/res/dr
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Google LLC (Material Icons)"
 SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = ["journal/src/main/res/drawable/ic_add.xml", "journal/src/main/res/drawable/ic_add_photo.xml", "journal/src/main/res/drawable/ic_check.xml", "journal/src/main/res/drawable/ic_chevron_left.xml", "journal/src/main/res/drawable/ic_chevron_right.xml", "journal/src/main/res/drawable/ic_close.xml", "journal/src/main/res/drawable/ic_delete.xml", "journal/src/main/res/drawable/ic_edit.xml", "journal/src/main/res/drawable/ic_event.xml", "journal/src/main/res/drawable/ic_schedule.xml", "journal/src/main/res/drawable/ic_share.xml"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Google LLC (Material Icons)"
+SPDX-License-Identifier = "Apache-2.0"

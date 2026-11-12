@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="app_name">Journal</string>
+    <string name="default_collection">Journal</string>
+    <string name="new_entry">New entry</string>
+    <string name="quick_entry">What\'s on your mind?</string>
+    <string name="add_entry">Add entry</string>
+    <string name="no_entries">Nothing written yet</string>
+    <string name="no_entries_on_day">Nothing written on this day</string>
+    <string name="group_day">Day</string>
+    <string name="group_week">Week</string>
+    <string name="group_month">Month</string>
+    <string name="previous_week">Previous week</string>
+    <string name="next_week">Next week</string>
+    <string name="show_day">Show %1$s</string>
+    <string name="has_entries">has entries</string>
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="week_of">Week of %1$s</string>
+    <string name="title">Title</string>
+    <string name="body">Write about your day</string>
+    <string name="add_photos">Add photos</string>
+    <string name="photo">Photo</string>
+    <string name="remove_photo">Remove photo</string>
+    <string name="add_tag">Add tag</string>
+    <string name="remove_tag">Remove tag %1$s</string>
+    <string name="edit">Edit</string>
+    <string name="done">Done</string>
+    <string name="share">Share</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="delete_entry_title">Delete this entry?</string>
+    <string name="delete_entry_message">Its photos will be deleted from this device too.</string>
+    <string name="edited_just_now">Edited just now</string>
+    <string name="edited_at">Edited %1$s</string>
+</resources>
