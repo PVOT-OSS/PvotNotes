@@ -25,7 +25,7 @@ SPDX-FileCopyrightText = "Google LLC (Material Icons)"
 SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
-path = ["fastlane/metadata/android/**/*.txt", "fastlane/metadata/android/**/*.png"]
+path = ["*/fastlane/metadata/android/**/*.txt", "*/fastlane/metadata/android/**/*.png"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Saalim Quadri <danascape@gmail.com>"
 SPDX-License-Identifier = "Apache-2.0"

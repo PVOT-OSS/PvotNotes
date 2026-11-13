@@ -11,8 +11,6 @@ IssueTracker: https://github.com/PVOT-OSS/Notes/issues
 WebSite: ""
 Categories:
   - Writing
-CurrentVersion: "1.0.0"
-CurrentVersionCode: 10000
 Description: |
   Notes is a clean, private place for lists, ideas, plans and drafts. Write
   in Markdown and read it formatted, tick checklists straight in a note, and
@@ -26,8 +24,11 @@ Repo: https://github.com/PVOT-OSS/Notes.git
 Builds:
   - versionName: 1.0.0
     versionCode: 10000
-    commit: v1.0.0
+    commit: notes-v1.0.0
     subdir: notes
     submodules: true
     gradle:
       - yes
+
+CurrentVersion: "1.0.0"
+CurrentVersionCode: 10000

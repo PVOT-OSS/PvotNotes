@@ -35,6 +35,13 @@ git submodule update --init
 
 JDK 21 and the Android SDK are required. Debug builds install as `<applicationId>.dev`.
 
+## Release
+
+Each app keeps its store listing (fastlane layout, read by Play and F-Droid) in
+`<app>/fastlane/metadata/android/` and its privacy policy in `<app>/PrivacyPolicy.md`. F-Droid build
+recipes are in `fdroid/metadata/`. Releases are tagged per app: `notes-vX.Y.Z`, `reminders-vX.Y.Z`,
+`journal-vX.Y.Z`; versions are set in the root `build.gradle.kts`.
+
 ## Licence
 
 Apache-2.0, see `LICENSES/`. The project follows [REUSE](https://reuse.software/).
