@@ -43,6 +43,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.coreui.PvotEmptyContent
+import com.prauga.pvot.coreui.PvotErrorContent
+import com.prauga.pvot.coreui.PvotLoadingContent
+import com.prauga.pvot.coreui.UiState
 import com.prauga.pvot.designsystem.components.PvotCard
 import com.prauga.pvot.designsystem.components.PvotCardDefaults
 import com.prauga.pvot.designsystem.components.PvotScreenScaffold
@@ -59,14 +62,41 @@ import org.prauga.notes.core.ui.entryContainerColor
 import org.prauga.notes.core.ui.markdown.MarkdownText
 
 @Composable
-fun NoteListScreen(
+internal fun NoteListScreen(
     viewModel: NoteListViewModel,
     onOpenNote: (Long) -> Unit,
     onNewNote: (Long?) -> Unit,
     onOpenCollections: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    BackHandler(enabled = state.searching) { viewModel.setSearching(false) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    when (val current = state) {
+        UiState.Loading -> PvotLoadingContent()
+        is UiState.Error ->
+            PvotErrorContent(
+                title = stringResource(R.string.error_title),
+                message = stringResource(R.string.error_message),
+                onRetry = { viewModel.onEvent(NoteListEvent.Retry) },
+            )
+        is UiState.Success ->
+            NoteListScaffold(
+                current.data,
+                viewModel::onEvent,
+                onOpenNote,
+                onNewNote,
+                onOpenCollections,
+            )
+    }
+}
+
+@Composable
+private fun NoteListScaffold(
+    state: NoteListState,
+    onEvent: (NoteListEvent) -> Unit,
+    onOpenNote: (Long) -> Unit,
+    onNewNote: (Long?) -> Unit,
+    onOpenCollections: () -> Unit,
+) {
+    BackHandler(enabled = state.searching) { onEvent(NoteListEvent.SetSearching(false)) }
 
     PvotScreenScaffold(
         topBar = {
@@ -79,7 +109,7 @@ fun NoteListScreen(
                 PvotTopBarAction(
                     icon = painterResource(R.drawable.ic_search),
                     contentDescription = stringResource(R.string.search),
-                    onClick = { viewModel.setSearching(!state.searching) },
+                    onClick = { onEvent(NoteListEvent.SetSearching(!state.searching)) },
                 )
                 PvotTopBarAction(
                     icon =
@@ -92,7 +122,7 @@ fun NoteListScreen(
                             if (state.layout == NoteLayout.GRID) R.string.show_as_list
                             else R.string.show_as_grid
                         ),
-                    onClick = viewModel::toggleLayout,
+                    onClick = { onEvent(NoteListEvent.ToggleLayout) },
                 )
             }
         },
@@ -105,15 +135,15 @@ fun NoteListScreen(
             )
         },
     ) { padding ->
-        NoteListContent(state, padding, viewModel, onOpenNote)
+        NoteListContent(state, padding, onEvent, onOpenNote)
     }
 }
 
 @Composable
 private fun NoteListContent(
-    state: NoteListUiState,
+    state: NoteListState,
     padding: PaddingValues,
-    viewModel: NoteListViewModel,
+    onEvent: (NoteListEvent) -> Unit,
     onOpenNote: (Long) -> Unit,
 ) {
     val columns =
@@ -138,7 +168,7 @@ private fun NoteListContent(
                 LaunchedEffect(Unit) { focusRequester.requestFocus() }
                 PvotTextField(
                     value = state.query,
-                    onValueChange = viewModel::setQuery,
+                    onValueChange = { onEvent(NoteListEvent.SetQuery(it)) },
                     placeholder = stringResource(R.string.search_notes),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
@@ -146,7 +176,9 @@ private fun NoteListContent(
             }
         }
         if (!state.searching) {
-            item(span = StaggeredGridItemSpan.FullLine) { QuickAdd(onAdd = viewModel::quickAdd) }
+            item(span = StaggeredGridItemSpan.FullLine) {
+                QuickAdd(onAdd = { onEvent(NoteListEvent.QuickAdd(it)) })
+            }
         }
         if (state.collections.size > 1) {
             item(span = StaggeredGridItemSpan.FullLine) {
@@ -154,7 +186,7 @@ private fun NoteListContent(
                     item {
                         FilterChip(
                             selected = state.selectedCollection == null,
-                            onClick = { viewModel.selectCollection(null) },
+                            onClick = { onEvent(NoteListEvent.SelectCollection(null)) },
                             label = { Text(stringResource(R.string.all_collections)) },
                             leadingIcon = {
                                 Icon(
@@ -169,9 +201,11 @@ private fun NoteListContent(
                         FilterChip(
                             selected = state.selectedCollection == collection.id,
                             onClick = {
-                                viewModel.selectCollection(
-                                    if (state.selectedCollection == collection.id) null
-                                    else collection.id
+                                onEvent(
+                                    NoteListEvent.SelectCollection(
+                                        if (state.selectedCollection == collection.id) null
+                                        else collection.id
+                                    )
                                 )
                             },
                             label = { Text(collection.name) },
@@ -186,7 +220,7 @@ private fun NoteListContent(
                     item {
                         FilterChip(
                             selected = state.selectedCategory == null,
-                            onClick = { viewModel.selectCategory(null) },
+                            onClick = { onEvent(NoteListEvent.SelectCategory(null)) },
                             label = { Text(stringResource(R.string.all_notes)) },
                         )
                     }
@@ -194,8 +228,10 @@ private fun NoteListContent(
                         FilterChip(
                             selected = state.selectedCategory == category,
                             onClick = {
-                                viewModel.selectCategory(
-                                    if (state.selectedCategory == category) null else category
+                                onEvent(
+                                    NoteListEvent.SelectCategory(
+                                        if (state.selectedCategory == category) null else category
+                                    )
                                 )
                             },
                             label = { Text(category) },
@@ -204,7 +240,7 @@ private fun NoteListContent(
                 }
             }
         }
-        if (!state.loading && state.notes.isEmpty()) {
+        if (state.notes.isEmpty()) {
             item(span = StaggeredGridItemSpan.FullLine) {
                 PvotEmptyContent(
                     message =

@@ -3,19 +3,21 @@
 
 package org.prauga.notes
 
-import android.content.Context
+import android.content.SharedPreferences
 import androidx.core.content.edit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.prauga.notes.list.NoteLayout
 
-class NotesPreferences(context: Context) {
-    private val prefs = context.getSharedPreferences("notes", Context.MODE_PRIVATE)
+internal class NotesPreferences(private val prefs: SharedPreferences) {
+    suspend fun layout(): NoteLayout =
+        withContext(Dispatchers.IO) {
+            val name = prefs.getString(KEY_LAYOUT, null)
+            NoteLayout.entries.firstOrNull { it.name == name } ?: NoteLayout.GRID
+        }
 
-    var layout: NoteLayout
-        get() =
-            prefs.getString(KEY_LAYOUT, null)?.let {
-                NoteLayout.entries.firstOrNull { layout -> layout.name == it }
-            } ?: NoteLayout.GRID
-        set(value) = prefs.edit { putString(KEY_LAYOUT, value.name) }
+    suspend fun setLayout(layout: NoteLayout) =
+        withContext(Dispatchers.IO) { prefs.edit { putString(KEY_LAYOUT, layout.name) } }
 
     private companion object {
         const val KEY_LAYOUT = "layout"

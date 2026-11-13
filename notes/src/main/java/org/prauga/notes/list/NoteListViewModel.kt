@@ -5,10 +5,12 @@ package org.prauga.notes.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.prauga.pvot.coreui.UiState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -17,78 +19,74 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.prauga.notes.NotesPreferences
-import org.prauga.notes.core.data.CollectionCount
 import org.prauga.notes.core.data.EntryFilter
 import org.prauga.notes.core.data.EntryRepository
 import org.prauga.notes.core.model.Component
-import org.prauga.notes.core.model.Entry
-
-enum class NoteLayout {
-    GRID,
-    LIST,
-}
-
-data class NoteListUiState(
-    val notes: List<Entry> = emptyList(),
-    val categories: List<String> = emptyList(),
-    val selectedCategory: String? = null,
-    val collections: List<CollectionCount> = emptyList(),
-    val selectedCollection: Long? = null,
-    val query: String = "",
-    val searching: Boolean = false,
-    val layout: NoteLayout = NoteLayout.GRID,
-    val loading: Boolean = true,
-)
-
-internal data class ListControls(
-    val query: String = "",
-    val searching: Boolean = false,
-    val category: String? = null,
-    val collection: Long? = null,
-    val layout: NoteLayout = NoteLayout.GRID,
-)
-
-internal fun ListControls.dropMissing(
-    collectionIds: Set<Long>,
-    categories: Set<String>,
-): ListControls =
-    copy(
-        collection = collection?.takeIf { it in collectionIds },
-        category = category?.takeIf { it in categories },
-    )
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class NoteListViewModel(
+internal class NoteListViewModel(
     private val repository: EntryRepository,
     private val preferences: NotesPreferences,
     private val defaultCollectionName: String,
 ) : ViewModel() {
-    private val controls = MutableStateFlow(ListControls(layout = preferences.layout))
+    private val controls = MutableStateFlow(ListControls())
+    private val attempt = MutableStateFlow(0)
 
-    private val collections = repository.observeCollectionCounts(Component.VJOURNAL)
-
-    // A selected collection or tag can disappear; filtering on it would hide every note.
-    private val selectedCollection =
-        combine(controls, collections) { controls, collections ->
-                controls.collection?.takeIf { id -> collections.any { it.id == id } }
-            }
-            .distinctUntilChanged()
-
-    private val categories =
-        selectedCollection.flatMapLatest { repository.observeCategories(Component.VJOURNAL, it) }
-
-    private val effectiveControls =
-        combine(controls, collections, categories) { controls, collections, categories ->
-            controls.dropMissing(
-                collections.map { it.id }.toSet(),
-                categories.map { it.name }.toSet(),
-            )
+    init {
+        viewModelScope.launch {
+            val layout = preferences.layout()
+            controls.update { it.copy(layout = layout) }
         }
+    }
 
-    val uiState: StateFlow<NoteListUiState> =
-        combine(
-                effectiveControls,
-                effectiveControls
+    val state: StateFlow<UiState<NoteListState>> =
+        attempt
+            .flatMapLatest {
+                notes()
+                    .map<NoteListState, UiState<NoteListState>> { UiState.Success(it) }
+                    .catch { emit(UiState.Error(it.message.orEmpty(), it)) }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState.Loading)
+
+    fun onEvent(event: NoteListEvent) {
+        when (event) {
+            is NoteListEvent.QuickAdd -> quickAdd(event.text)
+            is NoteListEvent.SetQuery -> controls.update { it.copy(query = event.query) }
+            is NoteListEvent.SetSearching ->
+                controls.update {
+                    it.copy(
+                        searching = event.searching,
+                        query = if (event.searching) it.query else "",
+                    )
+                }
+            is NoteListEvent.SelectCollection ->
+                controls.update { it.copy(collection = event.collectionId) }
+            is NoteListEvent.SelectCategory ->
+                controls.update { it.copy(category = event.category) }
+            NoteListEvent.ToggleLayout -> toggleLayout()
+            NoteListEvent.Retry -> attempt.update { it + 1 }
+        }
+    }
+
+    private fun notes() =
+        repository.observeCollectionCounts(Component.VJOURNAL).let { collections ->
+            // A selected collection or tag can disappear; filtering on it would hide every note.
+            val selectedCollection =
+                combine(controls, collections) { controls, all ->
+                        controls.collection?.takeIf { id -> all.any { it.id == id } }
+                    }
+                    .distinctUntilChanged()
+            val categories =
+                selectedCollection.flatMapLatest {
+                    repository.observeCategories(Component.VJOURNAL, it)
+                }
+            val effective =
+                combine(controls, collections, categories) { controls, all, tags ->
+                    controls.dropMissing(all.map { it.id }.toSet(), tags.map { it.name }.toSet())
+                }
+            combine(
+                effective,
+                effective
                     .map {
                         EntryFilter(
                             collectionId = it.collection,
@@ -100,47 +98,36 @@ class NoteListViewModel(
                     .flatMapLatest { repository.observeEntries(Component.VJOURNAL, it) },
                 categories,
                 collections,
-            ) { controls, notes, categories, collections ->
-                NoteListUiState(
+            ) { controls, notes, tags, all ->
+                NoteListState(
                     notes = notes,
-                    categories = categories.map { it.name },
+                    categories = tags.map { it.name },
                     selectedCategory = controls.category,
-                    collections = collections,
+                    collections = all,
                     selectedCollection = controls.collection,
                     query = controls.query,
                     searching = controls.searching,
                     layout = controls.layout,
-                    loading = false,
                 )
             }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), NoteListUiState())
+        }
 
-    fun quickAdd(text: String) {
+    private fun quickAdd(text: String) {
         val title = text.trim()
         if (title.isEmpty()) return
         viewModelScope.launch {
-            val collectionId =
-                uiState.value.selectedCollection
-                    ?: repository.defaultCollection(defaultCollectionName).id
+            val selected = (state.value as? UiState.Success)?.data?.selectedCollection
+            val collectionId = selected ?: repository.defaultCollection(defaultCollectionName).id
             repository.save(
                 repository.newEntry(Component.VJOURNAL, collectionId).copy(summary = title)
             )
         }
     }
 
-    fun setQuery(query: String) = controls.update { it.copy(query = query) }
-
-    fun setSearching(searching: Boolean) =
-        controls.update { it.copy(searching = searching, query = if (searching) it.query else "") }
-
-    fun selectCollection(collection: Long?) = controls.update { it.copy(collection = collection) }
-
-    fun selectCategory(category: String?) = controls.update { it.copy(category = category) }
-
-    fun toggleLayout() =
-        controls.update {
-            val layout = if (it.layout == NoteLayout.GRID) NoteLayout.LIST else NoteLayout.GRID
-            preferences.layout = layout
-            it.copy(layout = layout)
-        }
+    private fun toggleLayout() {
+        val layout =
+            if (controls.value.layout == NoteLayout.GRID) NoteLayout.LIST else NoteLayout.GRID
+        controls.update { it.copy(layout = layout) }
+        viewModelScope.launch { preferences.setLayout(layout) }
+    }
 }

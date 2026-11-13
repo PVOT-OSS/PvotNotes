@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.prauga.pvot.coreui.UiState
 import com.prauga.pvot.designsystem.components.PvotDialog
 import com.prauga.pvot.designsystem.components.PvotDialogAction
 import com.prauga.pvot.designsystem.components.PvotDialogActionStyle
@@ -59,8 +60,28 @@ import org.prauga.notes.core.ui.PlainTextField
 import org.prauga.notes.core.ui.markdown.MarkdownText
 
 @Composable
-fun NoteEditorScreen(viewModel: NoteEditorViewModel, onClose: () -> Unit) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+internal fun NoteEditorScreen(viewModel: NoteEditorViewModel, onClose: () -> Unit) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                NoteEditorEffect.Closed -> onClose()
+            }
+        }
+    }
+    when (val current = state) {
+        is UiState.Success -> NoteEditorScaffold(current.data, viewModel::onEvent, onClose)
+        UiState.Loading,
+        is UiState.Error -> Unit
+    }
+}
+
+@Composable
+private fun NoteEditorScaffold(
+    state: NoteEditorState,
+    onEvent: (NoteEditorEvent) -> Unit,
+    onClose: () -> Unit,
+) {
     val context = LocalContext.current
     var confirmDelete by remember { mutableStateOf(false) }
     val shareTitle = stringResource(R.string.share)
@@ -75,7 +96,7 @@ fun NoteEditorScreen(viewModel: NoteEditorViewModel, onClose: () -> Unit) {
                         ),
                     contentDescription =
                         stringResource(if (state.editing) R.string.done else R.string.edit),
-                    onClick = { viewModel.setEditing(!state.editing) },
+                    onClick = { onEvent(NoteEditorEvent.SetEditing(!state.editing)) },
                 )
                 PvotTopBarAction(
                     icon = painterResource(R.drawable.ic_share),
@@ -85,7 +106,7 @@ fun NoteEditorScreen(viewModel: NoteEditorViewModel, onClose: () -> Unit) {
                         val send =
                             Intent(Intent.ACTION_SEND)
                                 .setType("text/plain")
-                                .putExtra(Intent.EXTRA_TEXT, viewModel.shareText())
+                                .putExtra(Intent.EXTRA_TEXT, shareText(state.title, state.body))
                         if (state.title.isNotBlank())
                             send.putExtra(Intent.EXTRA_SUBJECT, state.title)
                         context.startActivity(Intent.createChooser(send, shareTitle))
@@ -95,27 +116,25 @@ fun NoteEditorScreen(viewModel: NoteEditorViewModel, onClose: () -> Unit) {
                     icon = painterResource(R.drawable.ic_delete),
                     contentDescription = stringResource(R.string.delete),
                     onClick = {
-                        if (state.saved) confirmDelete = true else viewModel.delete(onClose)
+                        if (state.saved) confirmDelete = true else onEvent(NoteEditorEvent.Delete)
                     },
                 )
             }
         }
     ) { padding ->
-        if (!state.loading) {
-            EditorContent(
-                state = state,
-                viewModel = viewModel,
-                modifier =
-                    Modifier.fillMaxSize()
-                        .imePadding()
-                        .verticalScroll(rememberScrollState())
-                        .padding(
-                            top = padding.calculateTopPadding(),
-                            bottom = padding.calculateBottomPadding(),
-                        )
-                        .padding(horizontal = AppDimens.ScreenGutter, vertical = PvotSpacing.S),
-            )
-        }
+        EditorContent(
+            state = state,
+            onEvent = onEvent,
+            modifier =
+                Modifier.fillMaxSize()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        top = padding.calculateTopPadding(),
+                        bottom = padding.calculateBottomPadding(),
+                    )
+                    .padding(horizontal = AppDimens.ScreenGutter, vertical = PvotSpacing.S),
+        )
     }
 
     PvotDialog(
@@ -130,7 +149,7 @@ fun NoteEditorScreen(viewModel: NoteEditorViewModel, onClose: () -> Unit) {
             style = PvotDialogActionStyle.Destructive,
             onClick = {
                 confirmDelete = false
-                viewModel.delete(onClose)
+                onEvent(NoteEditorEvent.Delete)
             },
         )
         PvotDialogAction(
@@ -143,8 +162,8 @@ fun NoteEditorScreen(viewModel: NoteEditorViewModel, onClose: () -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EditorContent(
-    state: NoteEditorUiState,
-    viewModel: NoteEditorViewModel,
+    state: NoteEditorState,
+    onEvent: (NoteEditorEvent) -> Unit,
     modifier: Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -159,7 +178,7 @@ private fun EditorContent(
             PlainTextField(
                 value = state.title,
                 onValueChange = { value ->
-                    viewModel.setTitle(value.replace("\n", ""))
+                    onEvent(NoteEditorEvent.SetTitle(value.replace("\n", "")))
                     if (value.contains('\n')) bodyFocus.requestFocus()
                 },
                 placeholder = stringResource(R.string.title),
@@ -171,7 +190,7 @@ private fun EditorContent(
             Spacer(Modifier.height(PvotSpacing.M))
             PlainTextField(
                 value = state.body,
-                onValueChange = viewModel::setBody,
+                onValueChange = { onEvent(NoteEditorEvent.SetBody(it)) },
                 placeholder = stringResource(R.string.note),
                 style = typography.bodyLarge.copy(color = colors.onSurface),
                 modifier =
@@ -180,7 +199,7 @@ private fun EditorContent(
                         .padding(bottom = AppDimens.BlockGap),
             )
         } else {
-            val startEditing = { viewModel.setEditing(true) }
+            val startEditing = { onEvent(NoteEditorEvent.SetEditing(true)) }
             Column(
                 modifier =
                     Modifier.fillMaxWidth()
@@ -196,7 +215,10 @@ private fun EditorContent(
                     Spacer(Modifier.height(PvotSpacing.M))
                 }
                 if (state.body.isNotBlank()) {
-                    MarkdownText(markdown = state.body, onToggleTask = viewModel::toggleTask)
+                    MarkdownText(
+                        markdown = state.body,
+                        onToggleTask = { onEvent(NoteEditorEvent.ToggleTask(it)) },
+                    )
                 } else {
                     Text(
                         stringResource(R.string.note),
@@ -213,7 +235,7 @@ private fun EditorContent(
             state.categories.forEach { category ->
                 InputChip(
                     selected = false,
-                    onClick = { viewModel.removeCategory(category) },
+                    onClick = { onEvent(NoteEditorEvent.RemoveCategory(category)) },
                     label = { Text("#$category") },
                     trailingIcon = {
                         Icon(
@@ -229,13 +251,13 @@ private fun EditorContent(
             CollectionPicker(
                 collections = state.collections,
                 selected = state.collectionId,
-                onSelect = viewModel::setCollection,
+                onSelect = { onEvent(NoteEditorEvent.SetCollection(it)) },
                 modifier = Modifier.padding(top = PvotSpacing.M),
             )
         }
         EntryColorRow(
             selected = state.color,
-            onSelect = viewModel::setColor,
+            onSelect = { onEvent(NoteEditorEvent.SetColor(it)) },
             modifier = Modifier.padding(top = PvotSpacing.M, bottom = PvotSpacing.XS),
         )
         var newTag by rememberSaveable { mutableStateOf("") }
@@ -243,7 +265,7 @@ private fun EditorContent(
             value = newTag,
             onValueChange = { value ->
                 if (value.endsWith(',')) {
-                    viewModel.addCategory(value.dropLast(1))
+                    onEvent(NoteEditorEvent.AddCategory(value.dropLast(1)))
                     newTag = ""
                 } else {
                     newTag = value
@@ -255,7 +277,7 @@ private fun EditorContent(
             capitalization = KeyboardCapitalization.None,
             imeAction = ImeAction.Done,
             onImeAction = {
-                viewModel.addCategory(newTag)
+                onEvent(NoteEditorEvent.AddCategory(newTag))
                 newTag = ""
             },
             modifier =
@@ -322,3 +344,6 @@ private fun CollectionPicker(
         }
     }
 }
+
+private fun shareText(title: String, body: String): String =
+    listOf(title, body).filter { it.isNotBlank() }.joinToString("\n\n")

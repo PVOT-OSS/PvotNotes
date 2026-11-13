@@ -6,16 +6,19 @@ package org.prauga.notes.editor
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import java.time.Instant
+import com.prauga.pvot.coreui.UiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -27,34 +30,29 @@ import org.prauga.notes.core.model.Entry
 import org.prauga.notes.core.model.EntryCollection
 import org.prauga.notes.core.ui.markdown.MarkdownParser
 
-data class NoteEditorUiState(
-    val loading: Boolean = true,
-    val title: String = "",
-    val body: String = "",
-    val categories: List<String> = emptyList(),
-    val color: Int? = null,
-    val collectionId: Long = 0,
-    val collections: List<EntryCollection> = emptyList(),
-    val lastModified: Instant? = null,
-    val saved: Boolean = false,
-    val focusTitle: Boolean = false,
-    val editing: Boolean = true,
-)
-
 @OptIn(FlowPreview::class)
-class NoteEditorViewModel(
+internal class NoteEditorViewModel(
     private val repository: EntryRepository,
     key: NoteEditor,
     defaultCollectionName: String,
     private val applicationScope: CoroutineScope,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(NoteEditorUiState())
-    val uiState: StateFlow<NoteEditorUiState> = _uiState.asStateFlow()
+    private val form = MutableStateFlow<NoteEditorState?>(null)
+    val state: StateFlow<UiState<NoteEditorState>> =
+        form
+            .map<NoteEditorState?, UiState<NoteEditorState>> { current ->
+                current?.let { UiState.Success(it) } ?: UiState.Loading
+            }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Loading)
+
+    private val closed = Channel<NoteEditorEffect>(Channel.BUFFERED)
+    val effects: Flow<NoteEditorEffect> = closed.receiveAsFlow()
 
     private val edits = Channel<Unit>(Channel.CONFLATED)
     private val saveLock = Mutex()
     private var entry: Entry? = null
+    private var collections: List<EntryCollection> = emptyList()
     private var deleted = false
     private var revised = false
 
@@ -69,15 +67,14 @@ class NoteEditorViewModel(
                         )
                         .copy(summary = key.title, description = key.text)
             entry = loaded
-            _uiState.value =
-                NoteEditorUiState(
-                    loading = false,
+            form.value =
+                NoteEditorState(
                     title = loaded.summary,
                     body = loaded.description,
                     categories = loaded.categories,
                     color = loaded.color,
                     collectionId = loaded.collectionId,
-                    collections = _uiState.value.collections,
+                    collections = collections,
                     lastModified = loaded.lastModified.takeIf { loaded.id != 0L },
                     saved = loaded.id != 0L,
                     focusTitle = loaded.id == 0L && loaded.isBlank(),
@@ -87,17 +84,18 @@ class NoteEditorViewModel(
         }
         viewModelScope.launch {
             repository.observeCollections().collect { list ->
-                _uiState.update { it.copy(collections = list) }
+                collections = list
+                form.update { it?.copy(collections = list) }
             }
         }
         viewModelScope.launch { edits.receiveAsFlow().debounce(SAVE_DELAY_MS).collect { save() } }
     }
 
-    fun setTitle(title: String) = edit { it.copy(title = title) }
+    private fun setTitle(title: String) = edit { it.copy(title = title) }
 
-    fun setBody(body: String) = edit { it.copy(body = body) }
+    private fun setBody(body: String) = edit { it.copy(body = body) }
 
-    fun addCategory(category: String) {
+    private fun addCategory(category: String) {
         val name = category.trim().removePrefix("#").trim()
         if (name.isEmpty()) return
         edit { state ->
@@ -106,36 +104,51 @@ class NoteEditorViewModel(
         }
     }
 
-    fun toggleTask(line: Int) = edit { it.copy(body = MarkdownParser.toggleTask(it.body, line)) }
-
-    fun setEditing(editing: Boolean) {
-        if (_uiState.value.loading) return
-        _uiState.update { it.copy(editing = editing, focusTitle = false) }
+    private fun toggleTask(line: Int) = edit {
+        it.copy(body = MarkdownParser.toggleTask(it.body, line))
     }
 
-    fun setCollection(id: Long) = edit { it.copy(collectionId = id) }
+    private fun setEditing(editing: Boolean) {
+        if (form.value == null) return
+        form.update { it?.copy(editing = editing, focusTitle = false) }
+    }
 
-    fun setColor(color: Int?) = edit { it.copy(color = color) }
+    private fun setCollection(id: Long) = edit { it.copy(collectionId = id) }
 
-    fun removeCategory(category: String) = edit { it.copy(categories = it.categories - category) }
+    private fun setColor(color: Int?) = edit { it.copy(color = color) }
 
-    fun shareText(): String =
-        with(_uiState.value) { listOf(title, body).filter { it.isNotBlank() }.joinToString("\n\n") }
+    private fun removeCategory(category: String) = edit {
+        it.copy(categories = it.categories - category)
+    }
 
-    fun delete(onDeleted: () -> Unit) {
+    private fun delete() {
         deleted = true
         val id = entry?.id ?: 0L
         applicationScope.launch { saveLock.withLock { if (id != 0L) repository.delete(id) } }
-        onDeleted()
+        closed.trySend(NoteEditorEffect.Closed)
+    }
+
+    fun onEvent(event: NoteEditorEvent) {
+        when (event) {
+            is NoteEditorEvent.SetTitle -> setTitle(event.title)
+            is NoteEditorEvent.SetBody -> setBody(event.body)
+            is NoteEditorEvent.AddCategory -> addCategory(event.category)
+            is NoteEditorEvent.RemoveCategory -> removeCategory(event.category)
+            is NoteEditorEvent.ToggleTask -> toggleTask(event.line)
+            is NoteEditorEvent.SetEditing -> setEditing(event.editing)
+            is NoteEditorEvent.SetCollection -> setCollection(event.collectionId)
+            is NoteEditorEvent.SetColor -> setColor(event.color)
+            NoteEditorEvent.Delete -> delete()
+        }
     }
 
     override fun onCleared() {
         if (!deleted) applicationScope.launch { save() }
     }
 
-    private fun edit(transform: (NoteEditorUiState) -> NoteEditorUiState) {
-        if (_uiState.value.loading) return
-        _uiState.update(transform)
+    private fun edit(transform: (NoteEditorState) -> NoteEditorState) {
+        if (form.value == null) return
+        form.update { it?.let(transform) }
         edits.trySend(Unit)
     }
 
@@ -143,7 +156,7 @@ class NoteEditorViewModel(
         saveLock.withLock {
             val base = entry ?: return@withLock
             if (deleted) return@withLock
-            val state = _uiState.value
+            val state = form.value ?: return@withLock
             val updated =
                 base.copy(
                     summary = state.title.trim(),
@@ -159,7 +172,7 @@ class NoteEditorViewModel(
             revised = true
             val stored = repository.getEntry(id) ?: return@withLock
             entry = stored
-            _uiState.update { it.copy(lastModified = stored.lastModified, saved = true) }
+            form.update { it?.copy(lastModified = stored.lastModified, saved = true) }
         }
 
     private suspend fun initialCollection(requested: Long, defaultName: String): Long {
