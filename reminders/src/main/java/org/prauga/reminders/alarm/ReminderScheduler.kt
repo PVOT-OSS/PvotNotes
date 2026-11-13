@@ -20,7 +20,7 @@ import org.prauga.notes.core.model.Component
 /**
  * One alarm for the next reminder; [sync] first notifies whatever came due since the last check.
  */
-class ReminderScheduler(
+internal class ReminderScheduler(
     private val context: Context,
     private val repository: EntryRepository,
     private val notifier: ReminderNotifier,

@@ -38,4 +38,6 @@
     <string name="delete_entry_message">Its photos will be deleted from this device too.</string>
     <string name="edited_just_now">Edited just now</string>
     <string name="edited_at">Edited %1$s</string>
+    <string name="error_title">Couldn\'t load your journal</string>
+    <string name="error_message">Something went wrong reading the journal on this device.</string>
 </resources>

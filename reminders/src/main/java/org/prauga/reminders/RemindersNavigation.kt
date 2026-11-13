@@ -20,13 +20,14 @@ import org.prauga.reminders.editor.TaskEditorViewModel
 import org.prauga.reminders.list.TaskListScreen
 import org.prauga.reminders.list.TaskListViewModel
 
-@Serializable data object TaskList : NavKey
+@Serializable internal data object TaskList : NavKey
 
 @Serializable
-data class TaskEditor(val id: Long = 0, val title: String = "", val text: String = "") : NavKey
+internal data class TaskEditor(val id: Long = 0, val title: String = "", val text: String = "") :
+    NavKey
 
 @Composable
-fun RemindersNavigation(request: TaskEditor?, onRequestHandled: () -> Unit) {
+internal fun RemindersNavigation(request: TaskEditor?, onRequestHandled: () -> Unit) {
     val backStack = rememberNavBackStack(TaskList)
     val container = LocalContext.current.appContainer
 
@@ -72,8 +73,8 @@ fun RemindersNavigation(request: TaskEditor?, onRequestHandled: () -> Unit) {
                                     createSavedStateHandle(),
                                 )
                             },
-                        scheduler = container.scheduler,
-                        notifier = container.notifier,
+                        canNotify = container.notifier::canNotify,
+                        canScheduleExact = container.scheduler::canScheduleExact,
                         onClose = { backStack.removeLastOrNull() },
                     )
                 }

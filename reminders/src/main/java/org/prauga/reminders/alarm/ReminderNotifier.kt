@@ -24,7 +24,7 @@ import org.prauga.reminders.list.DayWords
 import org.prauga.reminders.list.dueLabel
 import timber.log.Timber
 
-class ReminderNotifier(private val context: Context) {
+internal class ReminderNotifier(private val context: Context) {
     private val manager = NotificationManagerCompat.from(context)
 
     fun createChannel() {

@@ -6,7 +6,7 @@ package org.prauga.reminders.editor
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import java.time.Instant
+import com.prauga.pvot.coreui.UiState
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -14,13 +14,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -33,30 +36,24 @@ import org.prauga.notes.core.model.EntryTime
 import org.prauga.reminders.TaskEditor
 import org.prauga.reminders.list.Priority
 
-data class TaskEditorUiState(
-    val loading: Boolean = true,
-    val title: String = "",
-    val notes: String = "",
-    val due: EntryTime? = null,
-    val rrule: String? = null,
-    val alarms: List<Int> = emptyList(),
-    val priority: Priority = Priority.NONE,
-    val subtasks: List<Entry> = emptyList(),
-    val lastModified: Instant? = null,
-    val saved: Boolean = false,
-    val focusTitle: Boolean = false,
-)
-
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-class TaskEditorViewModel(
+internal class TaskEditorViewModel(
     private val repository: EntryRepository,
     key: TaskEditor,
     defaultCollectionName: String,
     private val applicationScope: CoroutineScope,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(TaskEditorUiState())
-    val uiState: StateFlow<TaskEditorUiState> = _uiState.asStateFlow()
+    private val form = MutableStateFlow<TaskEditorState?>(null)
+    val state: StateFlow<UiState<TaskEditorState>> =
+        form
+            .map<TaskEditorState?, UiState<TaskEditorState>> { current ->
+                current?.let { UiState.Success(it) } ?: UiState.Loading
+            }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Loading)
+
+    private val closed = Channel<TaskEditorEffect>(Channel.BUFFERED)
+    val effects: Flow<TaskEditorEffect> = closed.receiveAsFlow()
 
     private val edits = Channel<Unit>(Channel.CONFLATED)
     private val saveLock = Mutex()
@@ -76,10 +73,8 @@ class TaskEditorViewModel(
                         )
                         .copy(summary = key.title, description = key.text)
             entry = loaded
-            uid.value = loaded.uid
-            _uiState.value =
-                TaskEditorUiState(
-                    loading = false,
+            form.value =
+                TaskEditorState(
                     title = loaded.summary,
                     notes = loaded.description,
                     due = loaded.due,
@@ -90,63 +85,39 @@ class TaskEditorViewModel(
                     saved = loaded.id != 0L,
                     focusTitle = loaded.id == 0L && loaded.summary.isBlank(),
                 )
+            uid.value = loaded.uid
             if (loaded.id == 0L && !loaded.isBlank()) edits.send(Unit)
         }
         viewModelScope.launch {
             uid.filterNotNull()
                 .flatMapLatest { repository.observeChildren(it) }
-                .collect { children -> _uiState.update { it.copy(subtasks = children) } }
+                .collect { children -> form.update { it?.copy(subtasks = children) } }
         }
         viewModelScope.launch { edits.receiveAsFlow().debounce(SAVE_DELAY_MS).collect { save() } }
     }
 
-    fun setTitle(title: String) = edit { it.copy(title = title) }
-
-    fun setNotes(notes: String) = edit { it.copy(notes = notes) }
-
-    fun setDate(date: LocalDate?) = edit { state ->
-        when {
-            date == null -> state.copy(due = null, rrule = null, alarms = emptyList())
-            state.due is EntryTime.DateTime ->
-                state.copy(
-                    due =
-                        EntryTime.DateTime(
-                            date.atTime((state.due as EntryTime.DateTime).dateTime.toLocalTime()),
-                            ZoneId.systemDefault(),
-                        )
-                )
-            else -> state.copy(due = EntryTime.Date(date))
+    fun onEvent(event: TaskEditorEvent) {
+        when (event) {
+            is TaskEditorEvent.SetTitle -> edit { it.copy(title = event.title) }
+            is TaskEditorEvent.SetNotes -> edit { it.copy(notes = event.notes) }
+            is TaskEditorEvent.SetDate -> edit { it.withDate(event.date) }
+            is TaskEditorEvent.SetTime -> edit { it.withTime(event.time) }
+            is TaskEditorEvent.SetRepeat -> edit { it.copy(rrule = event.rrule) }
+            is TaskEditorEvent.AddAlarm ->
+                edit { it.copy(alarms = (it.alarms + event.minutesBefore).distinct().sorted()) }
+            is TaskEditorEvent.RemoveAlarm ->
+                edit { it.copy(alarms = it.alarms - event.minutesBefore) }
+            is TaskEditorEvent.SetPriority -> edit { it.copy(priority = event.priority) }
+            is TaskEditorEvent.AddSubtask -> addSubtask(event.title)
+            is TaskEditorEvent.SetSubtaskDone ->
+                viewModelScope.launch { repository.setCompleted(event.id, event.done) }
+            is TaskEditorEvent.RemoveSubtask ->
+                viewModelScope.launch { repository.delete(event.id) }
+            TaskEditorEvent.Delete -> delete()
         }
     }
 
-    /** Setting a time on a task with no reminders adds one at the due time. */
-    fun setTime(time: LocalTime?) = edit { state ->
-        val date =
-            state.due?.let { due ->
-                if (due is EntryTime.Date) due.date
-                else (due as EntryTime.DateTime).dateTime.toLocalDate()
-            } ?: LocalDate.now()
-        if (time == null) {
-            state.copy(due = EntryTime.Date(date))
-        } else {
-            state.copy(
-                due = EntryTime.DateTime(date.atTime(time), ZoneId.systemDefault()),
-                alarms = state.alarms.ifEmpty { listOf(0) },
-            )
-        }
-    }
-
-    fun setRepeat(rrule: String?) = edit { it.copy(rrule = rrule) }
-
-    fun addAlarm(minutesBefore: Int) = edit {
-        it.copy(alarms = (it.alarms + minutesBefore).distinct().sorted())
-    }
-
-    fun removeAlarm(minutesBefore: Int) = edit { it.copy(alarms = it.alarms - minutesBefore) }
-
-    fun setPriority(priority: Priority) = edit { it.copy(priority = priority) }
-
-    fun addSubtask(title: String) {
+    private fun addSubtask(title: String) {
         val text = title.trim()
         if (text.isEmpty()) return
         viewModelScope.launch {
@@ -160,28 +131,20 @@ class TaskEditorViewModel(
         }
     }
 
-    fun setSubtaskDone(id: Long, done: Boolean) {
-        viewModelScope.launch { repository.setCompleted(id, done) }
-    }
-
-    fun removeSubtask(id: Long) {
-        viewModelScope.launch { repository.delete(id) }
-    }
-
-    fun delete(onDeleted: () -> Unit) {
+    private fun delete() {
         deleted = true
         val id = entry?.id ?: 0L
         applicationScope.launch { saveLock.withLock { if (id != 0L) repository.delete(id) } }
-        onDeleted()
+        closed.trySend(TaskEditorEffect.Closed)
     }
 
     override fun onCleared() {
         if (!deleted) applicationScope.launch { save() }
     }
 
-    private fun edit(transform: (TaskEditorUiState) -> TaskEditorUiState) {
-        if (_uiState.value.loading) return
-        _uiState.update(transform)
+    private fun edit(transform: (TaskEditorState) -> TaskEditorState) {
+        if (form.value == null) return
+        form.update { it?.let(transform) }
         edits.trySend(Unit)
     }
 
@@ -189,7 +152,7 @@ class TaskEditorViewModel(
         saveLock.withLock {
             val base = entry ?: return@withLock
             if (deleted) return@withLock
-            val state = _uiState.value
+            val state = form.value ?: return@withLock
             val updated =
                 base.copy(
                     summary = state.title.trim(),
@@ -206,8 +169,40 @@ class TaskEditorViewModel(
             savedStateHandle[KEY_ID] = id
             val stored = repository.getEntry(id) ?: return@withLock
             entry = stored
-            _uiState.update { it.copy(lastModified = stored.lastModified, saved = true) }
+            form.update { it?.copy(lastModified = stored.lastModified, saved = true) }
         }
+
+    private fun TaskEditorState.withDate(date: LocalDate?): TaskEditorState =
+        when {
+            date == null -> copy(due = null, rrule = null, alarms = emptyList())
+            due is EntryTime.DateTime ->
+                copy(
+                    due =
+                        EntryTime.DateTime(
+                            date.atTime(due.dateTime.toLocalTime()),
+                            ZoneId.systemDefault(),
+                        )
+                )
+            else -> copy(due = EntryTime.Date(date))
+        }
+
+    // Setting a time on a task with no reminders adds one at the due time.
+    private fun TaskEditorState.withTime(time: LocalTime?): TaskEditorState {
+        val date =
+            when (val current = due) {
+                is EntryTime.Date -> current.date
+                is EntryTime.DateTime -> current.dateTime.toLocalDate()
+                null -> LocalDate.now()
+            }
+        return if (time == null) {
+            copy(due = EntryTime.Date(date))
+        } else {
+            copy(
+                due = EntryTime.DateTime(date.atTime(time), ZoneId.systemDefault()),
+                alarms = alarms.ifEmpty { listOf(0) },
+            )
+        }
+    }
 
     private fun savedId(key: TaskEditor): Long? =
         key.id.takeIf { it != 0L } ?: savedStateHandle.get<Long>(KEY_ID)

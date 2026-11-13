@@ -61,7 +61,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.prauga.pvot.coreui.UiState
 import com.prauga.pvot.designsystem.components.PvotCard
 import com.prauga.pvot.designsystem.components.PvotDialog
 import com.prauga.pvot.designsystem.components.PvotDialogAction
@@ -82,32 +84,50 @@ import org.prauga.notes.core.model.EntryTime
 import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.PlainTextField
 import org.prauga.reminders.R
-import org.prauga.reminders.alarm.ReminderNotifier
-import org.prauga.reminders.alarm.ReminderScheduler
 import org.prauga.reminders.list.DayWords
 import org.prauga.reminders.list.Priority
 import org.prauga.reminders.list.dueLabel
 import org.prauga.reminders.list.label
 
-enum class RepeatPreset(val rule: String?, val label: Int) {
-    NONE(null, R.string.repeat_none),
-    DAILY("FREQ=DAILY", R.string.repeat_daily),
-    WEEKDAYS("FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR", R.string.repeat_weekdays),
-    WEEKLY("FREQ=WEEKLY", R.string.repeat_weekly),
-    MONTHLY("FREQ=MONTHLY", R.string.repeat_monthly),
-    YEARLY("FREQ=YEARLY", R.string.repeat_yearly),
-}
-
 private val ALARM_PRESETS = listOf(0, 10, 60, 24 * 60)
 
 @Composable
-fun TaskEditorScreen(
+internal fun TaskEditorScreen(
     viewModel: TaskEditorViewModel,
-    scheduler: ReminderScheduler,
-    notifier: ReminderNotifier,
+    canNotify: () -> Boolean,
+    canScheduleExact: () -> Boolean,
     onClose: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                TaskEditorEffect.Closed -> onClose()
+            }
+        }
+    }
+    when (val current = state) {
+        is UiState.Success ->
+            TaskEditorScaffold(
+                state = current.data,
+                onEvent = viewModel::onEvent,
+                canNotify = canNotify,
+                canScheduleExact = canScheduleExact,
+                onClose = onClose,
+            )
+        UiState.Loading,
+        is UiState.Error -> Unit
+    }
+}
+
+@Composable
+private fun TaskEditorScaffold(
+    state: TaskEditorState,
+    onEvent: (TaskEditorEvent) -> Unit,
+    canNotify: () -> Boolean,
+    canScheduleExact: () -> Boolean,
+    onClose: () -> Unit,
+) {
     var confirmDelete by remember { mutableStateOf(false) }
     PvotScreenScaffold(
         topBar = {
@@ -116,29 +136,27 @@ fun TaskEditorScreen(
                     icon = painterResource(R.drawable.ic_delete),
                     contentDescription = stringResource(R.string.delete),
                     onClick = {
-                        if (state.saved) confirmDelete = true else viewModel.delete(onClose)
+                        if (state.saved) confirmDelete = true else onEvent(TaskEditorEvent.Delete)
                     },
                 )
             }
         }
     ) { padding ->
-        if (!state.loading) {
-            EditorContent(
-                state = state,
-                viewModel = viewModel,
-                scheduler = scheduler,
-                notifier = notifier,
-                modifier =
-                    Modifier.fillMaxSize()
-                        .imePadding()
-                        .verticalScroll(rememberScrollState())
-                        .padding(
-                            top = padding.calculateTopPadding(),
-                            bottom = padding.calculateBottomPadding(),
-                        )
-                        .padding(horizontal = AppDimens.ScreenGutter, vertical = PvotSpacing.S),
-            )
-        }
+        EditorContent(
+            state = state,
+            onEvent = onEvent,
+            canNotify = canNotify,
+            canScheduleExact = canScheduleExact,
+            modifier =
+                Modifier.fillMaxSize()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        top = padding.calculateTopPadding(),
+                        bottom = padding.calculateBottomPadding(),
+                    )
+                    .padding(horizontal = AppDimens.ScreenGutter, vertical = PvotSpacing.S),
+        )
     }
     PvotDialog(
         visible = confirmDelete,
@@ -153,7 +171,7 @@ fun TaskEditorScreen(
             style = PvotDialogActionStyle.Destructive,
             onClick = {
                 confirmDelete = false
-                viewModel.delete(onClose)
+                onEvent(TaskEditorEvent.Delete)
             },
         )
         PvotDialogAction(
@@ -166,10 +184,10 @@ fun TaskEditorScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EditorContent(
-    state: TaskEditorUiState,
-    viewModel: TaskEditorViewModel,
-    scheduler: ReminderScheduler,
-    notifier: ReminderNotifier,
+    state: TaskEditorState,
+    onEvent: (TaskEditorEvent) -> Unit,
+    canNotify: () -> Boolean,
+    canScheduleExact: () -> Boolean,
     modifier: Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -179,7 +197,7 @@ private fun EditorContent(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(PvotSpacing.S)) {
         PlainTextField(
             value = state.title,
-            onValueChange = { viewModel.setTitle(it.replace("\n", "")) },
+            onValueChange = { onEvent(TaskEditorEvent.SetTitle(it.replace("\n", ""))) },
             placeholder = stringResource(R.string.title),
             style = typography.headlineSmall.copy(color = colors.onSurface),
             imeAction = ImeAction.Next,
@@ -187,18 +205,18 @@ private fun EditorContent(
         )
         PlainTextField(
             value = state.notes,
-            onValueChange = viewModel::setNotes,
+            onValueChange = { onEvent(TaskEditorEvent.SetNotes(it)) },
             placeholder = stringResource(R.string.notes),
             style = typography.bodyLarge.copy(color = colors.onSurface),
             modifier = Modifier.fillMaxWidth().padding(bottom = PvotSpacing.S),
         )
 
         Label(stringResource(R.string.due))
-        DueChips(state.due, viewModel)
+        DueChips(state.due, onEvent)
 
         if (state.due != null) {
             Label(stringResource(R.string.repeat))
-            RepeatChip(state.rrule, viewModel::setRepeat)
+            RepeatChip(state.rrule) { onEvent(TaskEditorEvent.SetRepeat(it)) }
         }
 
         Label(stringResource(R.string.reminders))
@@ -209,15 +227,15 @@ private fun EditorContent(
                 color = colors.onSurfaceVariant,
             )
         } else {
-            AlarmChips(state.alarms, viewModel)
-            if (state.alarms.isNotEmpty()) PermissionPrompts(scheduler, notifier)
+            AlarmChips(state.alarms, onEvent)
+            if (state.alarms.isNotEmpty()) PermissionPrompts(canNotify, canScheduleExact)
         }
 
         Label(stringResource(R.string.priority))
         PvotSegmentedControl(
             options = Priority.entries.map { stringResource(it.label) },
             selectedIndex = state.priority.ordinal,
-            onSelect = { viewModel.setPriority(Priority.entries[it]) },
+            onSelect = { onEvent(TaskEditorEvent.SetPriority(Priority.entries[it])) },
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -227,7 +245,7 @@ private fun EditorContent(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = done,
-                    onCheckedChange = { viewModel.setSubtaskDone(subtask.id, it) },
+                    onCheckedChange = { onEvent(TaskEditorEvent.SetSubtaskDone(subtask.id, it)) },
                 )
                 Text(
                     subtask.summary,
@@ -236,7 +254,7 @@ private fun EditorContent(
                     textDecoration = if (done) TextDecoration.LineThrough else null,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = { viewModel.removeSubtask(subtask.id) }) {
+                IconButton(onClick = { onEvent(TaskEditorEvent.RemoveSubtask(subtask.id)) }) {
                     Icon(
                         painterResource(R.drawable.ic_close),
                         stringResource(R.string.remove_subtask, subtask.summary),
@@ -254,7 +272,7 @@ private fun EditorContent(
             singleLine = true,
             imeAction = ImeAction.Done,
             onImeAction = {
-                viewModel.addSubtask(newSubtask)
+                onEvent(TaskEditorEvent.AddSubtask(newSubtask))
                 newSubtask = ""
             },
             modifier = Modifier.fillMaxWidth().padding(vertical = PvotSpacing.S),
@@ -296,7 +314,7 @@ private fun Label(text: String) {
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun DueChips(due: EntryTime?, viewModel: TaskEditorViewModel) {
+private fun DueChips(due: EntryTime?, onEvent: (TaskEditorEvent) -> Unit) {
     var pickDate by remember { mutableStateOf(false) }
     var pickTime by remember { mutableStateOf(false) }
     val zone = ZoneId.systemDefault()
@@ -305,11 +323,11 @@ private fun DueChips(due: EntryTime?, viewModel: TaskEditorViewModel) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S)) {
         if (due == null) {
             AssistChip(
-                onClick = { viewModel.setDate(today) },
+                onClick = { onEvent(TaskEditorEvent.SetDate(today)) },
                 label = { Text(stringResource(R.string.today)) },
             )
             AssistChip(
-                onClick = { viewModel.setDate(today.plusDays(1)) },
+                onClick = { onEvent(TaskEditorEvent.SetDate(today.plusDays(1))) },
                 label = { Text(stringResource(R.string.tomorrow)) },
             )
             AssistChip(
@@ -359,7 +377,7 @@ private fun DueChips(due: EntryTime?, viewModel: TaskEditorViewModel) {
                     },
                 )
                 AssistChip(
-                    onClick = { viewModel.setTime(null) },
+                    onClick = { onEvent(TaskEditorEvent.SetTime(null)) },
                     label = { Text(stringResource(R.string.remove_time)) },
                 )
             } else {
@@ -376,7 +394,7 @@ private fun DueChips(due: EntryTime?, viewModel: TaskEditorViewModel) {
                 )
             }
             AssistChip(
-                onClick = { viewModel.setDate(null) },
+                onClick = { onEvent(TaskEditorEvent.SetDate(null)) },
                 label = { Text(stringResource(R.string.remove_date)) },
             )
         }
@@ -398,8 +416,10 @@ private fun DueChips(due: EntryTime?, viewModel: TaskEditorViewModel) {
                 TextButton(
                     onClick = {
                         picker.selectedDateMillis?.let {
-                            viewModel.setDate(
-                                Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()
+                            onEvent(
+                                TaskEditorEvent.SetDate(
+                                    Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()
+                                )
                             )
                         }
                         pickDate = false
@@ -429,7 +449,7 @@ private fun DueChips(due: EntryTime?, viewModel: TaskEditorViewModel) {
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.setTime(LocalTime.of(picker.hour, picker.minute))
+                        onEvent(TaskEditorEvent.SetTime(LocalTime.of(picker.hour, picker.minute)))
                         pickTime = false
                     }
                 ) {
@@ -496,14 +516,14 @@ private fun alarmLabel(minutes: Int): String =
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AlarmChips(alarms: List<Int>, viewModel: TaskEditorViewModel) {
+private fun AlarmChips(alarms: List<Int>, onEvent: (TaskEditorEvent) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S)) {
         alarms.forEach { minutes ->
             val label = alarmLabel(minutes)
             InputChip(
                 selected = false,
-                onClick = { viewModel.removeAlarm(minutes) },
+                onClick = { onEvent(TaskEditorEvent.RemoveAlarm(minutes)) },
                 label = { Text(label) },
                 leadingIcon = {
                     Icon(painterResource(R.drawable.ic_alarm), null, Modifier.size(AppDimens.IconM))
@@ -536,7 +556,7 @@ private fun AlarmChips(alarms: List<Int>, viewModel: TaskEditorViewModel) {
                         DropdownMenuItem(
                             text = { Text(alarmLabel(minutes)) },
                             onClick = {
-                                viewModel.addAlarm(minutes)
+                                onEvent(TaskEditorEvent.AddAlarm(minutes))
                                 expanded = false
                             },
                         )
@@ -548,22 +568,22 @@ private fun AlarmChips(alarms: List<Int>, viewModel: TaskEditorViewModel) {
 }
 
 @Composable
-private fun PermissionPrompts(scheduler: ReminderScheduler, notifier: ReminderNotifier) {
+private fun PermissionPrompts(canNotify: () -> Boolean, canScheduleExact: () -> Boolean) {
     val context = LocalContext.current
-    var notificationsOn by remember { mutableStateOf(notifier.canNotify()) }
-    var exactOn by remember { mutableStateOf(scheduler.canScheduleExact()) }
+    var notificationsOn by remember { mutableStateOf(canNotify()) }
+    var exactOn by remember { mutableStateOf(canScheduleExact()) }
     val request =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-            notificationsOn = notifier.canNotify()
+            notificationsOn = canNotify()
         }
     LaunchedEffect(Unit) {
         if (!notificationsOn && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             request.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
-    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
-        notificationsOn = notifier.canNotify()
-        exactOn = scheduler.canScheduleExact()
+    LifecycleResumeEffect(Unit) {
+        notificationsOn = canNotify()
+        exactOn = canScheduleExact()
         onPauseOrDispose {}
     }
     if (!notificationsOn) {

@@ -17,7 +17,7 @@ import org.prauga.notes.core.model.Component
 import timber.log.Timber
 
 class RemindersApplication : Application() {
-    val container: AppContainer by lazy { AppContainer(this) }
+    internal val container: AppContainer by lazy { AppContainer(this) }
 
     @OptIn(FlowPreview::class)
     override fun onCreate() {
@@ -47,5 +47,5 @@ class RemindersApplication : Application() {
     }
 }
 
-val Context.appContainer: AppContainer
+internal val Context.appContainer: AppContainer
     get() = (applicationContext as RemindersApplication).container

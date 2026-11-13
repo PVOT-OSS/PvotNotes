@@ -9,9 +9,9 @@ import java.time.LocalTime
 import java.time.ZoneId
 import org.prauga.notes.core.model.EntryTime
 
-val ALL_DAY_REMINDER_TIME: LocalTime = LocalTime.of(9, 0)
+internal val ALL_DAY_REMINDER_TIME: LocalTime = LocalTime.of(9, 0)
 
-fun EntryTime.localDate(zone: ZoneId): LocalDate =
+internal fun EntryTime.localDate(zone: ZoneId): LocalDate =
     when (this) {
         is EntryTime.Date -> date
         is EntryTime.DateTime ->
@@ -20,13 +20,13 @@ fun EntryTime.localDate(zone: ZoneId): LocalDate =
     }
 
 /** The instant a task is due; an all-day task is due at the end of its day. */
-fun EntryTime.dueInstant(zone: ZoneId): Instant =
+internal fun EntryTime.dueInstant(zone: ZoneId): Instant =
     when (this) {
         is EntryTime.Date -> date.plusDays(1).atStartOfDay(zone).toInstant()
         is EntryTime.DateTime -> dateTime.atZone(this.zone ?: zone).toInstant()
     }
 
-fun EntryTime.reminderBase(zone: ZoneId): Instant =
+internal fun EntryTime.reminderBase(zone: ZoneId): Instant =
     when (this) {
         is EntryTime.Date -> date.atTime(ALL_DAY_REMINDER_TIME).atZone(zone).toInstant()
         is EntryTime.DateTime -> dateTime.atZone(this.zone ?: zone).toInstant()

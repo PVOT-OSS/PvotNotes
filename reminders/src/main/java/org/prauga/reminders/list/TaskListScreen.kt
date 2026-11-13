@@ -41,6 +41,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.coreui.PvotEmptyContent
+import com.prauga.pvot.coreui.PvotErrorContent
+import com.prauga.pvot.coreui.PvotLoadingContent
+import com.prauga.pvot.coreui.UiState
 import com.prauga.pvot.designsystem.components.PvotCard
 import com.prauga.pvot.designsystem.components.PvotScreenScaffold
 import com.prauga.pvot.designsystem.components.button.PvotFab
@@ -54,12 +57,37 @@ import org.prauga.notes.core.ui.AppDimens
 import org.prauga.reminders.R
 
 @Composable
-fun TaskListScreen(
+internal fun TaskListScreen(
     viewModel: TaskListViewModel,
     onOpenTask: (Long) -> Unit,
     onNewTask: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    when (val current = state) {
+        UiState.Loading -> PvotLoadingContent()
+        is UiState.Error ->
+            PvotErrorContent(
+                title = stringResource(R.string.error_title),
+                message = stringResource(R.string.error_message),
+                onRetry = { viewModel.onEvent(TaskListEvent.Retry) },
+            )
+        is UiState.Success ->
+            TaskListScaffold(
+                state = current.data,
+                onEvent = viewModel::onEvent,
+                onOpenTask = onOpenTask,
+                onNewTask = onNewTask,
+            )
+    }
+}
+
+@Composable
+private fun TaskListScaffold(
+    state: TaskListState,
+    onEvent: (TaskListEvent) -> Unit,
+    onOpenTask: (Long) -> Unit,
+    onNewTask: () -> Unit,
+) {
     PvotScreenScaffold(
         topBar = { PvotTopBar(title = stringResource(R.string.app_name)) },
         floatingAction = {
@@ -82,8 +110,8 @@ fun TaskListScreen(
                 ),
             verticalArrangement = Arrangement.spacedBy(PvotSpacing.S),
         ) {
-            item { QuickAdd(onAdd = viewModel::quickAdd) }
-            if (!state.loading && state.sections.none { it.first != Section.COMPLETED }) {
+            item { QuickAdd(onAdd = { onEvent(TaskListEvent.QuickAdd(it)) }) }
+            if (state.sections.none { it.first != Section.COMPLETED }) {
                 item {
                     PvotEmptyContent(
                         message = stringResource(R.string.no_reminders),
@@ -105,7 +133,7 @@ fun TaskListScreen(
                                     stringResource(R.string.section_completed, rows.size)
                             },
                         expanded = if (completed) state.showCompleted else null,
-                        onToggle = viewModel::toggleCompleted,
+                        onToggle = { onEvent(TaskListEvent.ToggleCompleted) },
                     )
                 }
                 if (!completed || state.showCompleted) {
@@ -115,7 +143,9 @@ fun TaskListScreen(
                             overdue = section == Section.OVERDUE,
                             now = state.now,
                             onToggle = {
-                                viewModel.setDone(row.task.id, row.task.completed == null)
+                                onEvent(
+                                    TaskListEvent.SetDone(row.task.id, row.task.completed == null)
+                                )
                             },
                             onOpen = { onOpenTask(row.task.id) },
                         )
@@ -309,7 +339,7 @@ private fun QuickAdd(onAdd: (String) -> Unit) {
     )
 }
 
-val Priority.label: Int
+internal val Priority.label: Int
     get() =
         when (this) {
             Priority.NONE -> R.string.priority_none
@@ -319,7 +349,7 @@ val Priority.label: Int
         }
 
 @Composable
-fun Priority.color(): Color =
+internal fun Priority.color(): Color =
     when (this) {
         Priority.HIGH -> MaterialTheme.colorScheme.error
         Priority.MEDIUM -> MaterialTheme.colorScheme.tertiary

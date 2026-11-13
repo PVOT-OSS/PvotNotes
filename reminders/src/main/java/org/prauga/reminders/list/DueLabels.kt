@@ -11,10 +11,7 @@ import java.util.Locale
 import org.prauga.notes.core.model.EntryTime
 import org.prauga.reminders.localDate
 
-/** From string resources in the app, fixed text in tests. */
-data class DayWords(val today: String, val tomorrow: String, val yesterday: String)
-
-fun dueLabel(
+internal fun dueLabel(
     due: EntryTime,
     today: LocalDate,
     zone: ZoneId,

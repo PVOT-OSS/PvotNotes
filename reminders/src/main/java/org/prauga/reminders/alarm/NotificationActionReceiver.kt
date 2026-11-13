@@ -6,42 +6,8 @@ package org.prauga.reminders.alarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import kotlinx.coroutines.launch
 import org.prauga.reminders.MainActivity
 import org.prauga.reminders.appContainer
-
-private fun BroadcastReceiver.work(context: Context, block: suspend () -> Unit) {
-    val pending = goAsync()
-    context.appContainer.applicationScope.launch {
-        try {
-            block()
-        } finally {
-            pending.finish()
-        }
-    }
-}
-
-class AlarmReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        val container = context.appContainer
-        val snoozed = intent.getLongExtra(EXTRA_TASK_ID, -1)
-        work(context) {
-            if (snoozed >= 0) {
-                container.repository
-                    .getEntry(snoozed)
-                    ?.takeIf { it.completed == null }
-                    ?.let(container.notifier::notify)
-                container.scheduler.clearSnooze(snoozed)
-            } else {
-                container.scheduler.sync()
-            }
-        }
-    }
-
-    companion object {
-        const val EXTRA_TASK_ID = "task_id"
-    }
-}
 
 class NotificationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -64,11 +30,5 @@ class NotificationActionReceiver : BroadcastReceiver() {
     companion object {
         const val ACTION_DONE = "org.prauga.reminders.action.DONE"
         const val ACTION_SNOOZE = "org.prauga.reminders.action.SNOOZE"
-    }
-}
-
-class RescheduleReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        work(context) { context.appContainer.scheduler.sync() }
     }
 }

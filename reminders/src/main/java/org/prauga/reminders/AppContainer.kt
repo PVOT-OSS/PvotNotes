@@ -12,7 +12,7 @@ import org.prauga.notes.core.data.EntryRepository
 import org.prauga.reminders.alarm.ReminderNotifier
 import org.prauga.reminders.alarm.ReminderScheduler
 
-class AppContainer(context: Context) {
+internal class AppContainer(context: Context) {
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val defaultCollectionName: String = context.getString(R.string.default_collection)
     val repository: EntryRepository by lazy {

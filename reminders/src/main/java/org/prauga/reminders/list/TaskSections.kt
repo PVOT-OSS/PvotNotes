@@ -9,34 +9,7 @@ import org.prauga.notes.core.model.Entry
 import org.prauga.reminders.dueInstant
 import org.prauga.reminders.localDate
 
-enum class Section {
-    OVERDUE,
-    TODAY,
-    UPCOMING,
-    NO_DATE,
-    COMPLETED,
-}
-
-/** iCalendar PRIORITY: 1 is highest, 9 lowest, 0 or none undefined. */
-enum class Priority(val value: Int?) {
-    NONE(null),
-    LOW(9),
-    MEDIUM(5),
-    HIGH(1);
-
-    companion object {
-        fun of(value: Int?): Priority =
-            when (value) {
-                null,
-                0 -> NONE
-                in 1..4 -> HIGH
-                5 -> MEDIUM
-                else -> LOW
-            }
-    }
-}
-
-fun sectionOf(task: Entry, now: Instant, zone: ZoneId): Section {
+internal fun sectionOf(task: Entry, now: Instant, zone: ZoneId): Section {
     if (task.completed != null) return Section.COMPLETED
     val due = task.due ?: return Section.NO_DATE
     val today = now.atZone(zone).toLocalDate()
@@ -47,7 +20,11 @@ fun sectionOf(task: Entry, now: Instant, zone: ZoneId): Section {
     }
 }
 
-fun groupTasks(tasks: List<Entry>, now: Instant, zone: ZoneId): List<Pair<Section, List<Entry>>> =
+internal fun groupTasks(
+    tasks: List<Entry>,
+    now: Instant,
+    zone: ZoneId,
+): List<Pair<Section, List<Entry>>> =
     tasks
         .groupBy { sectionOf(it, now, zone) }
         .toSortedMap()
