@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.designsystem.components.PvotDialog
 import com.prauga.pvot.designsystem.components.PvotDialogAction
@@ -35,8 +34,10 @@ import com.prauga.pvot.designsystem.components.list.PvotListGroup
 import com.prauga.pvot.designsystem.components.list.PvotListRow
 import com.prauga.pvot.designsystem.components.textfield.PvotTextField
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
+import com.prauga.pvot.designsystem.theme.PvotSpacing
 import org.prauga.notes.R
 import org.prauga.notes.core.data.CollectionCount
+import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.EntryColorRow
 
 private data class CollectionDraft(val id: Long = 0, val name: String = "", val color: Int? = null)
@@ -62,10 +63,10 @@ fun CollectionsScreen(viewModel: CollectionsViewModel, onBack: () -> Unit) {
             modifier = Modifier.fillMaxSize(),
             contentPadding =
                 PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = padding.calculateTopPadding() + 8.dp,
-                    bottom = padding.calculateBottomPadding() + 96.dp,
+                    start = PvotSpacing.L,
+                    end = PvotSpacing.L,
+                    top = padding.calculateTopPadding() + PvotSpacing.S,
+                    bottom = padding.calculateBottomPadding() + AppDimens.FabClearance,
                 ),
         ) {
             item {
@@ -82,7 +83,7 @@ fun CollectionsScreen(viewModel: CollectionsViewModel, onBack: () -> Unit) {
                                     ),
                                 leading = {
                                     Box(
-                                        Modifier.size(20.dp)
+                                        Modifier.size(AppDimens.IconL)
                                             .background(
                                                 collection.color?.let(::Color)
                                                     ?: MaterialTheme.colorScheme.outline,
@@ -127,7 +128,7 @@ fun CollectionsScreen(viewModel: CollectionsViewModel, onBack: () -> Unit) {
                 EntryColorRow(
                     selected = color,
                     onSelect = { color = it },
-                    modifier = Modifier.padding(top = 12.dp),
+                    modifier = Modifier.padding(top = PvotSpacing.M),
                 )
             },
         ) {

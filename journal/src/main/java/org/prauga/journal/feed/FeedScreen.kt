@@ -46,7 +46,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.coreui.PvotEmptyContent
 import com.prauga.pvot.designsystem.components.PvotCard
@@ -56,6 +55,7 @@ import com.prauga.pvot.designsystem.components.button.PvotFab
 import com.prauga.pvot.designsystem.components.button.PvotIconButton
 import com.prauga.pvot.designsystem.components.textfield.PvotTextField
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
+import com.prauga.pvot.designsystem.theme.PvotSpacing
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -65,6 +65,7 @@ import org.prauga.journal.AttachmentImage
 import org.prauga.journal.AttachmentStore
 import org.prauga.journal.R
 import org.prauga.notes.core.model.Entry
+import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.markdown.MarkdownText
 
 @Composable
@@ -92,12 +93,12 @@ fun FeedScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding =
                 PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = padding.calculateTopPadding() + 8.dp,
-                    bottom = padding.calculateBottomPadding() + 96.dp,
+                    start = PvotSpacing.L,
+                    end = PvotSpacing.L,
+                    top = padding.calculateTopPadding() + PvotSpacing.S,
+                    bottom = padding.calculateBottomPadding() + AppDimens.FabClearance,
                 ),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(PvotSpacing.M),
         ) {
             item {
                 WeekStrip(
@@ -128,7 +129,7 @@ fun FeedScreen(
                                 if (state.controls.selectedDay != null) R.string.no_entries_on_day
                                 else R.string.no_entries
                             ),
-                        modifier = Modifier.padding(top = 48.dp),
+                        modifier = Modifier.padding(top = AppDimens.EmptyStateTop),
                     )
                 }
             }
@@ -140,7 +141,7 @@ fun FeedScreen(
                         periodTitle(period, LocalDate.now(zone), locale),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp, start = 4.dp),
+                        modifier = Modifier.padding(top = PvotSpacing.S, start = PvotSpacing.XS),
                     )
                 }
                 items(entries, key = { it.id }) { entry ->
@@ -221,15 +222,19 @@ private fun WeekStrip(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier =
                     Modifier.weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(AppDimens.CardCorner))
                         .background(if (isSelected) colors.primary else Color.Transparent)
                         .then(
                             if (day == today && !isSelected)
-                                Modifier.border(1.dp, colors.primary, RoundedCornerShape(12.dp))
+                                Modifier.border(
+                                    AppDimens.Hairline,
+                                    colors.primary,
+                                    RoundedCornerShape(AppDimens.CardCorner),
+                                )
                             else Modifier
                         )
                         .clickable { onSelect(day) }
-                        .padding(vertical = 6.dp)
+                        .padding(vertical = PvotSpacing.S)
                         .semantics(mergeDescendants = true) { contentDescription = label },
             ) {
                 val content = if (isSelected) colors.onPrimary else colors.onSurface
@@ -244,9 +249,9 @@ private fun WeekStrip(
                     color = content,
                     textAlign = TextAlign.Center,
                 )
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(PvotSpacing.XS))
                 Box(
-                    Modifier.size(5.dp)
+                    Modifier.size(AppDimens.Dot)
                         .background(
                             if (hasEntries) (if (isSelected) colors.onPrimary else colors.primary)
                             else Color.Transparent,
@@ -282,7 +287,10 @@ private fun EntryCard(
                     .format(moment)
         }
     PvotCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(
+            Modifier.padding(PvotSpacing.L),
+            verticalArrangement = Arrangement.spacedBy(PvotSpacing.S),
+        ) {
             Text(
                 stamp,
                 style = MaterialTheme.typography.labelMedium,
@@ -306,13 +314,15 @@ private fun EntryCard(
                 )
             }
             if (entry.attachments.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S)) {
                     entry.attachments.take(3).forEach { attachment ->
                         AttachmentImage(
                             file = attachments.file(attachment),
                             contentDescription = stringResource(R.string.photo),
                             maxPx = 320,
-                            modifier = Modifier.size(88.dp).clip(RoundedCornerShape(12.dp)),
+                            modifier =
+                                Modifier.size(AppDimens.Thumbnail)
+                                    .clip(RoundedCornerShape(AppDimens.CardCorner)),
                         )
                     }
                     if (entry.attachments.size > 3) {
@@ -321,7 +331,8 @@ private fun EntryCard(
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier =
-                                Modifier.align(Alignment.CenterVertically).padding(start = 4.dp),
+                                Modifier.align(Alignment.CenterVertically)
+                                    .padding(start = PvotSpacing.XS),
                         )
                     }
                 }

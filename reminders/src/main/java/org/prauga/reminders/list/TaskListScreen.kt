@@ -39,7 +39,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.coreui.PvotEmptyContent
 import com.prauga.pvot.designsystem.components.PvotCard
@@ -48,8 +47,10 @@ import com.prauga.pvot.designsystem.components.button.PvotFab
 import com.prauga.pvot.designsystem.components.button.PvotIconButton
 import com.prauga.pvot.designsystem.components.textfield.PvotTextField
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
+import com.prauga.pvot.designsystem.theme.PvotSpacing
 import java.time.Instant
 import java.time.ZoneId
+import org.prauga.notes.core.ui.AppDimens
 import org.prauga.reminders.R
 
 @Composable
@@ -74,19 +75,19 @@ fun TaskListScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding =
                 PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = padding.calculateTopPadding() + 8.dp,
-                    bottom = padding.calculateBottomPadding() + 96.dp,
+                    start = PvotSpacing.L,
+                    end = PvotSpacing.L,
+                    top = padding.calculateTopPadding() + PvotSpacing.S,
+                    bottom = padding.calculateBottomPadding() + AppDimens.FabClearance,
                 ),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(PvotSpacing.S),
         ) {
             item { QuickAdd(onAdd = viewModel::quickAdd) }
             if (!state.loading && state.sections.none { it.first != Section.COMPLETED }) {
                 item {
                     PvotEmptyContent(
                         message = stringResource(R.string.no_reminders),
-                        modifier = Modifier.padding(top = 48.dp),
+                        modifier = Modifier.padding(top = AppDimens.EmptyStateTop),
                     )
                 }
             }
@@ -129,7 +130,10 @@ fun TaskListScreen(
 private fun SectionHeader(title: String, expanded: Boolean?, onToggle: () -> Unit) {
     val modifier = if (expanded != null) Modifier.clickable(onClick = onToggle) else Modifier
     Row(
-        modifier = modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp, start = 4.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(top = PvotSpacing.M, bottom = PvotSpacing.XS, start = PvotSpacing.XS),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -138,14 +142,14 @@ private fun SectionHeader(title: String, expanded: Boolean?, onToggle: () -> Uni
             color = MaterialTheme.colorScheme.primary,
         )
         if (expanded != null) {
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(PvotSpacing.XS))
             Icon(
                 painterResource(
                     if (expanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more
                 ),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(AppDimens.IconL),
             )
         }
     }
@@ -164,7 +168,12 @@ private fun TaskRowCard(
     val colors = MaterialTheme.colorScheme
     PvotCard(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.padding(end = 16.dp, top = 4.dp, bottom = 4.dp),
+            modifier =
+                Modifier.padding(
+                    end = PvotSpacing.L,
+                    top = PvotSpacing.XS,
+                    bottom = PvotSpacing.XS,
+                ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val toggleLabel =
@@ -175,9 +184,10 @@ private fun TaskRowCard(
             Checkbox(
                 checked = done,
                 onCheckedChange = { onToggle() },
-                modifier = Modifier.padding(4.dp).semantics { contentDescription = toggleLabel },
+                modifier =
+                    Modifier.padding(PvotSpacing.XS).semantics { contentDescription = toggleLabel },
             )
-            Column(modifier = Modifier.weight(1f).padding(vertical = 8.dp)) {
+            Column(modifier = Modifier.weight(1f).padding(vertical = PvotSpacing.S)) {
                 Text(
                     text = task.summary.ifBlank { " " },
                     style = MaterialTheme.typography.bodyLarge,
@@ -191,12 +201,19 @@ private fun TaskRowCard(
             Priority.of(task.priority)
                 .takeIf { it != Priority.NONE }
                 ?.let { priority ->
-                    Icon(
-                        painterResource(R.drawable.ic_flag),
-                        contentDescription = stringResource(priority.label),
-                        tint = priority.color(),
-                        modifier = Modifier.size(18.dp),
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painterResource(R.drawable.ic_flag),
+                            contentDescription = null,
+                            tint = priority.color(),
+                            modifier = Modifier.size(AppDimens.IconM),
+                        )
+                        Text(
+                            stringResource(priority.label),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = priority.color(),
+                        )
+                    }
                 }
         }
     }
@@ -233,7 +250,7 @@ private fun MetaRow(row: TaskRow, overdue: Boolean, now: Instant) {
         else MaterialTheme.colorScheme.onSurfaceVariant
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S),
     ) {
         if (parts.isNotEmpty())
             Text(
@@ -242,9 +259,19 @@ private fun MetaRow(row: TaskRow, overdue: Boolean, now: Instant) {
                 color = tint,
             )
         if (task.alarms.isNotEmpty())
-            Icon(painterResource(R.drawable.ic_alarm), null, Modifier.size(14.dp), tint = tint)
+            Icon(
+                painterResource(R.drawable.ic_alarm),
+                null,
+                Modifier.size(AppDimens.IconXs),
+                tint = tint,
+            )
         if (task.rrule != null)
-            Icon(painterResource(R.drawable.ic_repeat), null, Modifier.size(14.dp), tint = tint)
+            Icon(
+                painterResource(R.drawable.ic_repeat),
+                null,
+                Modifier.size(AppDimens.IconXs),
+                tint = tint,
+            )
     }
 }
 
@@ -295,7 +322,7 @@ val Priority.label: Int
 fun Priority.color(): Color =
     when (this) {
         Priority.HIGH -> MaterialTheme.colorScheme.error
-        Priority.MEDIUM -> Color(0xFFFFA500)
+        Priority.MEDIUM -> MaterialTheme.colorScheme.tertiary
         Priority.LOW -> MaterialTheme.colorScheme.primary
         Priority.NONE -> MaterialTheme.colorScheme.onSurfaceVariant
     }

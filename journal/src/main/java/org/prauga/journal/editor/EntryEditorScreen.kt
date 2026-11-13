@@ -57,7 +57,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,6 +66,7 @@ import com.prauga.pvot.designsystem.components.PvotDialogActionStyle
 import com.prauga.pvot.designsystem.components.PvotScreenScaffold
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
 import com.prauga.pvot.designsystem.navigation.PvotTopBarAction
+import com.prauga.pvot.designsystem.theme.PvotSpacing
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneOffset
@@ -76,6 +76,7 @@ import org.prauga.journal.AttachmentImage
 import org.prauga.journal.AttachmentStore
 import org.prauga.journal.R
 import org.prauga.notes.core.model.Attachment
+import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.PlainTextField
 import org.prauga.notes.core.ui.markdown.MarkdownText
 
@@ -140,7 +141,7 @@ fun EntryEditorScreen(
                             top = padding.calculateTopPadding(),
                             bottom = padding.calculateBottomPadding(),
                         )
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                        .padding(horizontal = AppDimens.ScreenGutter, vertical = PvotSpacing.S),
             )
         }
     }
@@ -204,7 +205,7 @@ private fun EditorContent(
             ->
             if (uris.isNotEmpty()) viewModel.addPhotos(uris)
         }
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(PvotSpacing.M)) {
         MomentChips(state, viewModel)
         if (state.editing) {
             val bodyFocus = remember { FocusRequester() }
@@ -230,7 +231,7 @@ private fun EditorContent(
                 Modifier.fillMaxWidth().clickable(interactionSource = null, indication = null) {
                     viewModel.setEditing(true)
                 },
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(PvotSpacing.M),
             ) {
                 if (state.title.isNotBlank())
                     Text(state.title, style = typography.headlineSmall, color = colors.onSurface)
@@ -247,34 +248,39 @@ private fun EditorContent(
         }
 
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S),
+            verticalArrangement = Arrangement.spacedBy(PvotSpacing.S),
         ) {
             state.attachments.forEach { photo ->
-                Box(Modifier.size(104.dp)) {
+                Box(Modifier.size(AppDimens.PhotoTile)) {
                     AttachmentImage(
                         file = attachments.file(photo),
                         contentDescription = stringResource(R.string.photo),
                         maxPx = 360,
                         modifier =
-                            Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)).clickable {
-                                onViewPhoto(photo)
-                            },
+                            Modifier.fillMaxSize()
+                                .clip(RoundedCornerShape(AppDimens.PhotoCorner))
+                                .clickable { onViewPhoto(photo) },
                     )
                     Box(
                         Modifier.align(Alignment.TopEnd)
-                            .padding(4.dp)
-                            .size(28.dp)
+                            .size(AppDimens.TouchTarget)
                             .clip(CircleShape)
-                            .background(colors.surface.copy(alpha = 0.85f))
                             .clickable { viewModel.removePhoto(photo) },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            painterResource(R.drawable.ic_close),
-                            stringResource(R.string.remove_photo),
-                            Modifier.size(16.dp),
-                        )
+                        Box(
+                            Modifier.size(AppDimens.PhotoRemoveBadge)
+                                .clip(CircleShape)
+                                .background(colors.surface.copy(alpha = 0.85f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_close),
+                                stringResource(R.string.remove_photo),
+                                Modifier.size(AppDimens.IconS),
+                            )
+                        }
                     }
                 }
             }
@@ -287,13 +293,13 @@ private fun EditorContent(
             },
             label = { Text(stringResource(R.string.add_photos)) },
             leadingIcon = {
-                Icon(painterResource(R.drawable.ic_add_photo), null, Modifier.size(18.dp))
+                Icon(painterResource(R.drawable.ic_add_photo), null, Modifier.size(AppDimens.IconM))
             },
         )
 
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S),
+            verticalArrangement = Arrangement.spacedBy(PvotSpacing.XS),
         ) {
             state.categories.forEach { category ->
                 InputChip(
@@ -304,7 +310,7 @@ private fun EditorContent(
                         Icon(
                             painterResource(R.drawable.ic_close),
                             stringResource(R.string.remove_tag, category),
-                            Modifier.size(16.dp),
+                            Modifier.size(AppDimens.IconS),
                         )
                     },
                 )
@@ -330,7 +336,8 @@ private fun EditorContent(
                 viewModel.addCategory(newTag)
                 newTag = ""
             },
-            modifier = Modifier.widthIn(min = 120.dp).padding(vertical = 4.dp),
+            modifier =
+                Modifier.widthIn(min = AppDimens.TagFieldMin).padding(vertical = PvotSpacing.XS),
         )
 
         state.lastModified?.let {
@@ -362,7 +369,7 @@ private fun MomentChips(state: EntryEditorUiState, viewModel: EntryEditorViewMod
     val locale = LocalConfiguration.current.locales[0]
     var pickDate by remember { mutableStateOf(false) }
     var pickTime by remember { mutableStateOf(false) }
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S)) {
         AssistChip(
             onClick = { pickDate = true },
             label = {
@@ -372,7 +379,9 @@ private fun MomentChips(state: EntryEditorUiState, viewModel: EntryEditorViewMod
                         .format(state.moment)
                 )
             },
-            leadingIcon = { Icon(painterResource(R.drawable.ic_event), null, Modifier.size(18.dp)) },
+            leadingIcon = {
+                Icon(painterResource(R.drawable.ic_event), null, Modifier.size(AppDimens.IconM))
+            },
         )
         AssistChip(
             onClick = { pickTime = true },
@@ -384,7 +393,7 @@ private fun MomentChips(state: EntryEditorUiState, viewModel: EntryEditorViewMod
                 )
             },
             leadingIcon = {
-                Icon(painterResource(R.drawable.ic_schedule), null, Modifier.size(18.dp))
+                Icon(painterResource(R.drawable.ic_schedule), null, Modifier.size(AppDimens.IconM))
             },
         )
     }

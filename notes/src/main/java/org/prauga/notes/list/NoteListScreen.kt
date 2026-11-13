@@ -41,7 +41,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.coreui.PvotEmptyContent
 import com.prauga.pvot.designsystem.components.PvotCard
@@ -52,8 +51,10 @@ import com.prauga.pvot.designsystem.components.button.PvotIconButton
 import com.prauga.pvot.designsystem.components.textfield.PvotTextField
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
 import com.prauga.pvot.designsystem.navigation.PvotTopBarAction
+import com.prauga.pvot.designsystem.theme.PvotSpacing
 import org.prauga.notes.R
 import org.prauga.notes.core.model.Entry
+import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.entryContainerColor
 import org.prauga.notes.core.ui.markdown.MarkdownText
 
@@ -116,20 +117,20 @@ private fun NoteListContent(
     onOpenNote: (Long) -> Unit,
 ) {
     val columns =
-        if (state.layout == NoteLayout.GRID) StaggeredGridCells.Adaptive(160.dp)
+        if (state.layout == NoteLayout.GRID) StaggeredGridCells.Adaptive(AppDimens.GridCell)
         else StaggeredGridCells.Fixed(1)
     LazyVerticalStaggeredGrid(
         columns = columns,
         modifier = Modifier.fillMaxSize(),
         contentPadding =
             PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = padding.calculateTopPadding() + 8.dp,
-                bottom = padding.calculateBottomPadding() + 96.dp,
+                start = PvotSpacing.L,
+                end = PvotSpacing.L,
+                top = padding.calculateTopPadding() + PvotSpacing.S,
+                bottom = padding.calculateBottomPadding() + AppDimens.FabClearance,
             ),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalItemSpacing = 12.dp,
+        horizontalArrangement = Arrangement.spacedBy(PvotSpacing.M),
+        verticalItemSpacing = PvotSpacing.M,
     ) {
         if (state.searching) {
             item(span = StaggeredGridItemSpan.FullLine) {
@@ -149,7 +150,7 @@ private fun NoteListContent(
         }
         if (state.collections.size > 1) {
             item(span = StaggeredGridItemSpan.FullLine) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S)) {
                     item {
                         FilterChip(
                             selected = state.selectedCollection == null,
@@ -159,7 +160,7 @@ private fun NoteListContent(
                                 Icon(
                                     painterResource(R.drawable.ic_folder),
                                     null,
-                                    Modifier.size(16.dp),
+                                    Modifier.size(AppDimens.IconS),
                                 )
                             },
                         )
@@ -181,7 +182,7 @@ private fun NoteListContent(
         }
         if (state.categories.isNotEmpty()) {
             item(span = StaggeredGridItemSpan.FullLine) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S)) {
                     item {
                         FilterChip(
                             selected = state.selectedCategory == null,
@@ -215,7 +216,7 @@ private fun NoteListContent(
                                 else -> R.string.no_notes
                             }
                         ),
-                    modifier = Modifier.padding(top = 64.dp),
+                    modifier = Modifier.padding(top = AppDimens.EmptyStateTop),
                 )
             }
         }
@@ -234,7 +235,7 @@ private fun NoteCard(note: Entry, onClick: () -> Unit) {
                 ?: PvotCardDefaults.colors(),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(PvotSpacing.L)) {
             if (note.summary.isNotBlank()) {
                 Text(
                     text = note.summary,
@@ -245,7 +246,7 @@ private fun NoteCard(note: Entry, onClick: () -> Unit) {
                 )
             }
             if (note.summary.isNotBlank() && note.description.isNotBlank())
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(PvotSpacing.S))
             if (note.description.isNotBlank()) {
                 MarkdownText(
                     markdown = note.description,
@@ -255,7 +256,7 @@ private fun NoteCard(note: Entry, onClick: () -> Unit) {
                 )
             }
             if (note.categories.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(PvotSpacing.S))
                 Text(
                     text = note.categories.joinToString("  ") { "#$it" },
                     style = MaterialTheme.typography.labelMedium,

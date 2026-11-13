@@ -60,7 +60,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.designsystem.components.PvotCard
@@ -71,6 +70,7 @@ import com.prauga.pvot.designsystem.components.PvotScreenScaffold
 import com.prauga.pvot.designsystem.components.PvotSegmentedControl
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
 import com.prauga.pvot.designsystem.navigation.PvotTopBarAction
+import com.prauga.pvot.designsystem.theme.PvotSpacing
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -79,6 +79,7 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import org.prauga.notes.core.model.EntryTime
+import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.PlainTextField
 import org.prauga.reminders.R
 import org.prauga.reminders.alarm.ReminderNotifier
@@ -135,7 +136,7 @@ fun TaskEditorScreen(
                             top = padding.calculateTopPadding(),
                             bottom = padding.calculateBottomPadding(),
                         )
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                        .padding(horizontal = AppDimens.ScreenGutter, vertical = PvotSpacing.S),
             )
         }
     }
@@ -175,7 +176,7 @@ private fun EditorContent(
     val typography = MaterialTheme.typography
     val titleFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { if (state.focusTitle) titleFocus.requestFocus() }
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(PvotSpacing.S)) {
         PlainTextField(
             value = state.title,
             onValueChange = { viewModel.setTitle(it.replace("\n", "")) },
@@ -189,7 +190,7 @@ private fun EditorContent(
             onValueChange = viewModel::setNotes,
             placeholder = stringResource(R.string.notes),
             style = typography.bodyLarge.copy(color = colors.onSurface),
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = PvotSpacing.S),
         )
 
         Label(stringResource(R.string.due))
@@ -239,7 +240,7 @@ private fun EditorContent(
                     Icon(
                         painterResource(R.drawable.ic_close),
                         stringResource(R.string.remove_subtask, subtask.summary),
-                        Modifier.size(18.dp),
+                        Modifier.size(AppDimens.IconM),
                     )
                 }
             }
@@ -256,12 +257,12 @@ private fun EditorContent(
                 viewModel.addSubtask(newSubtask)
                 newSubtask = ""
             },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = PvotSpacing.S),
         )
 
         state.lastModified?.let {
             val now = System.currentTimeMillis()
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(PvotSpacing.XS))
             Text(
                 text =
                     if (now - it.toEpochMilli() < DateUtils.MINUTE_IN_MILLIS) {
@@ -289,7 +290,7 @@ private fun Label(text: String) {
         text,
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 12.dp),
+        modifier = Modifier.padding(top = PvotSpacing.M),
     )
 }
 
@@ -301,7 +302,7 @@ private fun DueChips(due: EntryTime?, viewModel: TaskEditorViewModel) {
     val zone = ZoneId.systemDefault()
     val today = LocalDate.now(zone)
     val locale = LocalConfiguration.current.locales[0]
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S)) {
         if (due == null) {
             AssistChip(
                 onClick = { viewModel.setDate(today) },
@@ -315,7 +316,7 @@ private fun DueChips(due: EntryTime?, viewModel: TaskEditorViewModel) {
                 onClick = { pickDate = true },
                 label = { Text(stringResource(R.string.pick_date)) },
                 leadingIcon = {
-                    Icon(painterResource(R.drawable.ic_event), null, Modifier.size(18.dp))
+                    Icon(painterResource(R.drawable.ic_event), null, Modifier.size(AppDimens.IconM))
                 },
             )
         } else {
@@ -335,7 +336,7 @@ private fun DueChips(due: EntryTime?, viewModel: TaskEditorViewModel) {
                 onClick = { pickDate = true },
                 label = { Text(dueLabel(dateOnly, today, zone, words, locale)) },
                 leadingIcon = {
-                    Icon(painterResource(R.drawable.ic_event), null, Modifier.size(18.dp))
+                    Icon(painterResource(R.drawable.ic_event), null, Modifier.size(AppDimens.IconM))
                 },
             )
             if (due is EntryTime.DateTime) {
@@ -350,7 +351,11 @@ private fun DueChips(due: EntryTime?, viewModel: TaskEditorViewModel) {
                         )
                     },
                     leadingIcon = {
-                        Icon(painterResource(R.drawable.ic_schedule), null, Modifier.size(18.dp))
+                        Icon(
+                            painterResource(R.drawable.ic_schedule),
+                            null,
+                            Modifier.size(AppDimens.IconM),
+                        )
                     },
                 )
                 AssistChip(
@@ -362,7 +367,11 @@ private fun DueChips(due: EntryTime?, viewModel: TaskEditorViewModel) {
                     onClick = { pickTime = true },
                     label = { Text(stringResource(R.string.add_time)) },
                     leadingIcon = {
-                        Icon(painterResource(R.drawable.ic_schedule), null, Modifier.size(18.dp))
+                        Icon(
+                            painterResource(R.drawable.ic_schedule),
+                            null,
+                            Modifier.size(AppDimens.IconM),
+                        )
                     },
                 )
             }
@@ -453,7 +462,7 @@ private fun RepeatChip(rrule: String?, onSelect: (String?) -> Unit) {
                 )
             },
             leadingIcon = {
-                Icon(painterResource(R.drawable.ic_repeat), null, Modifier.size(18.dp))
+                Icon(painterResource(R.drawable.ic_repeat), null, Modifier.size(AppDimens.IconM))
             },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -489,7 +498,7 @@ private fun alarmLabel(minutes: Int): String =
 @Composable
 private fun AlarmChips(alarms: List<Int>, viewModel: TaskEditorViewModel) {
     var expanded by remember { mutableStateOf(false) }
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S)) {
         alarms.forEach { minutes ->
             val label = alarmLabel(minutes)
             InputChip(
@@ -497,13 +506,13 @@ private fun AlarmChips(alarms: List<Int>, viewModel: TaskEditorViewModel) {
                 onClick = { viewModel.removeAlarm(minutes) },
                 label = { Text(label) },
                 leadingIcon = {
-                    Icon(painterResource(R.drawable.ic_alarm), null, Modifier.size(18.dp))
+                    Icon(painterResource(R.drawable.ic_alarm), null, Modifier.size(AppDimens.IconM))
                 },
                 trailingIcon = {
                     Icon(
                         painterResource(R.drawable.ic_close),
                         stringResource(R.string.remove_alarm, label),
-                        Modifier.size(16.dp),
+                        Modifier.size(AppDimens.IconS),
                     )
                 },
             )
@@ -515,7 +524,11 @@ private fun AlarmChips(alarms: List<Int>, viewModel: TaskEditorViewModel) {
                     onClick = { expanded = true },
                     label = { Text(stringResource(R.string.alarm_add)) },
                     leadingIcon = {
-                        Icon(painterResource(R.drawable.ic_add), null, Modifier.size(18.dp))
+                        Icon(
+                            painterResource(R.drawable.ic_add),
+                            null,
+                            Modifier.size(AppDimens.IconM),
+                        )
                     },
                 )
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -561,8 +574,8 @@ private fun PermissionPrompts(scheduler: ReminderScheduler, notifier: ReminderNo
         )
     }
     if (!exactOn && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        PvotCard(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-            Column(Modifier.padding(16.dp)) {
+        PvotCard(modifier = Modifier.fillMaxWidth().padding(top = PvotSpacing.XS)) {
+            Column(Modifier.padding(PvotSpacing.L)) {
                 Text(
                     stringResource(R.string.exact_alarm_title),
                     style = MaterialTheme.typography.titleSmall,

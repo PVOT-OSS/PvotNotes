@@ -43,7 +43,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.designsystem.components.PvotDialog
 import com.prauga.pvot.designsystem.components.PvotDialogAction
@@ -51,8 +50,10 @@ import com.prauga.pvot.designsystem.components.PvotDialogActionStyle
 import com.prauga.pvot.designsystem.components.PvotScreenScaffold
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
 import com.prauga.pvot.designsystem.navigation.PvotTopBarAction
+import com.prauga.pvot.designsystem.theme.PvotSpacing
 import org.prauga.notes.R
 import org.prauga.notes.core.model.EntryCollection
+import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.EntryColorRow
 import org.prauga.notes.core.ui.PlainTextField
 import org.prauga.notes.core.ui.markdown.MarkdownText
@@ -112,7 +113,7 @@ fun NoteEditorScreen(viewModel: NoteEditorViewModel, onClose: () -> Unit) {
                             top = padding.calculateTopPadding(),
                             bottom = padding.calculateBottomPadding(),
                         )
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                        .padding(horizontal = AppDimens.ScreenGutter, vertical = PvotSpacing.S),
             )
         }
     }
@@ -167,13 +168,16 @@ private fun EditorContent(
                 onImeAction = { bodyFocus.requestFocus() },
                 modifier = Modifier.fillMaxWidth().focusRequester(titleFocus),
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(PvotSpacing.M))
             PlainTextField(
                 value = state.body,
                 onValueChange = viewModel::setBody,
                 placeholder = stringResource(R.string.note),
                 style = typography.bodyLarge.copy(color = colors.onSurface),
-                modifier = Modifier.fillMaxWidth().focusRequester(bodyFocus).padding(bottom = 24.dp),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .focusRequester(bodyFocus)
+                        .padding(bottom = AppDimens.BlockGap),
             )
         } else {
             val startEditing = { viewModel.setEditing(true) }
@@ -185,11 +189,11 @@ private fun EditorContent(
                             indication = null,
                             onClick = startEditing,
                         )
-                        .padding(bottom = 24.dp)
+                        .padding(bottom = AppDimens.BlockGap)
             ) {
                 if (state.title.isNotBlank()) {
                     Text(state.title, style = typography.headlineSmall, color = colors.onSurface)
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(PvotSpacing.M))
                 }
                 if (state.body.isNotBlank()) {
                     MarkdownText(markdown = state.body, onToggleTask = viewModel::toggleTask)
@@ -203,8 +207,8 @@ private fun EditorContent(
             }
         }
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S),
+            verticalArrangement = Arrangement.spacedBy(PvotSpacing.XS),
         ) {
             state.categories.forEach { category ->
                 InputChip(
@@ -215,7 +219,7 @@ private fun EditorContent(
                         Icon(
                             painterResource(R.drawable.ic_close),
                             contentDescription = stringResource(R.string.remove_tag, category),
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(AppDimens.IconS),
                         )
                     },
                 )
@@ -226,13 +230,13 @@ private fun EditorContent(
                 collections = state.collections,
                 selected = state.collectionId,
                 onSelect = viewModel::setCollection,
-                modifier = Modifier.padding(top = 12.dp),
+                modifier = Modifier.padding(top = PvotSpacing.M),
             )
         }
         EntryColorRow(
             selected = state.color,
             onSelect = viewModel::setColor,
-            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+            modifier = Modifier.padding(top = PvotSpacing.M, bottom = PvotSpacing.XS),
         )
         var newTag by rememberSaveable { mutableStateOf("") }
         PlainTextField(
@@ -254,10 +258,11 @@ private fun EditorContent(
                 viewModel.addCategory(newTag)
                 newTag = ""
             },
-            modifier = Modifier.widthIn(min = 120.dp).padding(vertical = 8.dp),
+            modifier =
+                Modifier.widthIn(min = AppDimens.TagFieldMin).padding(vertical = PvotSpacing.S),
         )
         state.lastModified?.let {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(PvotSpacing.S))
             val now = System.currentTimeMillis()
             Text(
                 text =
@@ -294,13 +299,13 @@ private fun CollectionPicker(
             onClick = { expanded = true },
             label = { Text(current?.name.orEmpty()) },
             leadingIcon = {
-                Icon(painterResource(R.drawable.ic_folder), null, Modifier.size(18.dp))
+                Icon(painterResource(R.drawable.ic_folder), null, Modifier.size(AppDimens.IconM))
             },
             trailingIcon = {
                 Icon(
                     painterResource(R.drawable.ic_arrow_drop_down),
                     stringResource(R.string.collection),
-                    Modifier.size(18.dp),
+                    Modifier.size(AppDimens.IconM),
                 )
             },
         )

@@ -39,6 +39,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.prauga.pvot.designsystem.theme.PvotSpacing
+import org.prauga.notes.core.ui.AppDimens
 
 @Composable
 fun MarkdownText(
@@ -54,7 +56,7 @@ fun MarkdownText(
     val compact = maxBlocks != Int.MAX_VALUE
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 6.dp),
+        verticalArrangement = Arrangement.spacedBy(if (compact) PvotSpacing.XS else PvotSpacing.S),
     ) {
         shown.forEach { block -> Block(block, style.copy(color = color), compact, onToggleTask) }
     }
@@ -97,9 +99,9 @@ private fun Block(
                 Checkbox(
                     checked = block.checked,
                     onCheckedChange = onToggleTask?.let { toggle -> { toggle(block.line) } },
-                    modifier = Modifier.size(if (compact) 28.dp else 36.dp),
+                    modifier = if (compact) Modifier.size(AppDimens.CompactCheckbox) else Modifier,
                 )
-                Box(Modifier.width(4.dp))
+                Box(Modifier.width(PvotSpacing.XS))
                 InlineText(
                     block.text,
                     if (block.checked) {
@@ -116,7 +118,7 @@ private fun Block(
         is MarkdownBlock.Quote ->
             Row(Modifier.height(IntrinsicSize.Min)) {
                 Box(
-                    Modifier.width(3.dp)
+                    Modifier.width(AppDimens.QuoteBar)
                         .fillMaxHeight()
                         .background(colors.primary.copy(alpha = 0.6f))
                 )
@@ -124,7 +126,7 @@ private fun Block(
                     block.text,
                     style.copy(color = colors.onSurfaceVariant, fontStyle = FontStyle.Italic),
                     maxLines,
-                    Modifier.padding(start = 12.dp),
+                    Modifier.padding(start = PvotSpacing.M),
                 )
             }
         is MarkdownBlock.Code ->
@@ -139,17 +141,17 @@ private fun Block(
                 overflow = TextOverflow.Ellipsis,
                 modifier =
                     Modifier.fillMaxWidth()
-                        .background(colors.surfaceVariant, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .background(colors.surfaceVariant, RoundedCornerShape(PvotSpacing.S))
+                        .padding(horizontal = PvotSpacing.M, vertical = PvotSpacing.S),
             )
-        MarkdownBlock.Rule -> HorizontalDivider(Modifier.padding(vertical = 4.dp))
+        MarkdownBlock.Rule -> HorizontalDivider(Modifier.padding(vertical = PvotSpacing.XS))
     }
 }
 
 @Composable
 private fun ListRow(indent: Int, marker: String, text: String, style: TextStyle, maxLines: Int) {
     Row(modifier = Modifier.padding(start = (indent * 20).dp)) {
-        Text(marker, style = style, modifier = Modifier.width(24.dp))
+        Text(marker, style = style, modifier = Modifier.width(AppDimens.ListMarker))
         InlineText(text, style, maxLines)
     }
 }

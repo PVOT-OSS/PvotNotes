@@ -26,7 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
+import com.prauga.pvot.designsystem.theme.PvotSpacing
 
 /** CSS3 keyword colours, so a colour survives iCalendar's COLOR property exactly. */
 enum class EntryColor(val argb: Int, @StringRes val label: Int) {
@@ -51,19 +51,20 @@ fun EntryColorRow(selected: Int?, onSelect: (Int?) -> Unit, modifier: Modifier =
     val ring = MaterialTheme.colorScheme.onSurface
     FlowRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(PvotSpacing.M),
+        verticalArrangement = Arrangement.spacedBy(PvotSpacing.S),
     ) {
         val label = stringResource(R.string.ui_color_none)
         Swatch(selected == null, ring, label, { onSelect(null) }) {
             Box(
-                Modifier.size(32.dp).border(BorderStroke(1.dp, outline), CircleShape),
+                Modifier.size(AppDimens.Swatch)
+                    .border(BorderStroke(AppDimens.Hairline, outline), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     painterResource(R.drawable.ui_ic_close),
                     null,
-                    Modifier.size(16.dp),
+                    Modifier.size(AppDimens.IconS),
                     tint = outline,
                 )
             }
@@ -71,7 +72,7 @@ fun EntryColorRow(selected: Int?, onSelect: (Int?) -> Unit, modifier: Modifier =
         EntryColor.entries.forEach { color ->
             val label = stringResource(color.label)
             Swatch(selected == color.argb, ring, label, { onSelect(color.argb) }) {
-                Box(Modifier.size(32.dp).background(Color(color.argb), CircleShape))
+                Box(Modifier.size(AppDimens.Swatch).background(Color(color.argb), CircleShape))
             }
         }
     }
@@ -87,8 +88,14 @@ private fun Swatch(
 ) {
     Box(
         modifier =
-            Modifier.size(40.dp)
-                .border(BorderStroke(2.dp, if (selected) ring else Color.Transparent), CircleShape)
+            Modifier.size(AppDimens.TouchTarget)
+                .border(
+                    BorderStroke(
+                        AppDimens.SelectionRing,
+                        if (selected) ring else Color.Transparent,
+                    ),
+                    CircleShape,
+                )
                 .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
                 .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
