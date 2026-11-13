@@ -1,0 +1,24 @@
+Journal is a private diary for your days: what happened, what you thought, and the photos that go with it.
+
+Write about your day
+• Each entry has a date and time, a title and your text
+• Write in Markdown and read it formatted, with checklists you can tick
+• Add photos from your gallery to any entry
+• Tags to bring related entries together
+• Everything saves as you type
+
+Look back
+• A timeline grouped by day, week or month
+• A week strip with a dot on every day you wrote
+• Tap a day to see only its entries, or write one for it
+
+Quick to capture
+• A quick entry field at the top of the timeline
+• Share text or a photo from any app into a new entry
+• A "New entry" shortcut on your home screen
+
+Private and open
+• No ads, no accounts, no tracking
+• No internet permission: your journal stays on your phone
+• Photos are copied into the app, so your entries keep them
+• Free and open source under the Apache-2.0 licence: github.com/PVOT-OSS/Notes
