@@ -13,6 +13,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.format.DateTimeParseException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,7 +72,7 @@ class EntryEditorViewModel(
                 existing
                     ?: run {
                         val now = LocalDateTime.now(zone).withSecond(0).withNano(0)
-                        val day = key.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                        val day = key.date?.let(::dateOrNull)
                         val start =
                             if (day == null || day == now.toLocalDate()) now else day.atTime(12, 0)
                         val shared = key.image?.let { store.import(it.toUri()) }
@@ -194,6 +195,13 @@ class EntryEditorViewModel(
             val stored = repository.getEntry(id) ?: return@withLock
             entry = stored
             _uiState.update { it.copy(lastModified = stored.lastModified, saved = true) }
+        }
+
+    private fun dateOrNull(iso: String): LocalDate? =
+        try {
+            LocalDate.parse(iso)
+        } catch (_: DateTimeParseException) {
+            null
         }
 
     private fun savedId(key: EntryEditor): Long? =

@@ -3,6 +3,7 @@
 
 package org.prauga.notes.core.ical
 
+import java.time.DateTimeException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import net.fortuna.ical4j.model.Recur
@@ -11,30 +12,33 @@ import org.prauga.notes.core.model.EntryTime
 object Recurrence {
     /** The first occurrence of [rrule] after [time], counting [time] as the series start. */
     fun next(rrule: String, time: EntryTime): EntryTime? =
-        runCatching {
-                when (time) {
-                    is EntryTime.Date -> {
-                        val recur = Recur<LocalDate>(rrule)
-                        recur
-                            .getDates(time.date, time.date.plusDays(1), time.date.plusYears(100), 1)
-                            .firstOrNull()
-                            ?.let { EntryTime.Date(it) }
-                    }
-                    is EntryTime.DateTime -> {
-                        val recur = Recur<LocalDateTime>(rrule)
-                        recur
-                            .getDates(
-                                time.dateTime,
-                                time.dateTime.plusSeconds(1),
-                                time.dateTime.plusYears(100),
-                                1,
-                            )
-                            .firstOrNull()
-                            ?.let { EntryTime.DateTime(it, time.zone) }
-                    }
+        try {
+            when (time) {
+                is EntryTime.Date -> {
+                    val recur = Recur<LocalDate>(rrule)
+                    recur
+                        .getDates(time.date, time.date.plusDays(1), time.date.plusYears(100), 1)
+                        .firstOrNull()
+                        ?.let { EntryTime.Date(it) }
+                }
+                is EntryTime.DateTime -> {
+                    val recur = Recur<LocalDateTime>(rrule)
+                    recur
+                        .getDates(
+                            time.dateTime,
+                            time.dateTime.plusSeconds(1),
+                            time.dateTime.plusYears(100),
+                            1,
+                        )
+                        .firstOrNull()
+                        ?.let { EntryTime.DateTime(it, time.zone) }
                 }
             }
-            .getOrNull()
+        } catch (_: IllegalArgumentException) {
+            null
+        } catch (_: DateTimeException) {
+            null
+        }
 
     /** Signed minutes of an RFC 5545 duration (`-PT15M` is -15); positive is after. */
     fun durationMinutes(value: String): Int? {

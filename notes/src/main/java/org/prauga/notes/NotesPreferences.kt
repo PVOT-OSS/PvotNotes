@@ -13,7 +13,7 @@ class NotesPreferences(context: Context) {
     var layout: NoteLayout
         get() =
             prefs.getString(KEY_LAYOUT, null)?.let {
-                runCatching { NoteLayout.valueOf(it) }.getOrNull()
+                NoteLayout.entries.firstOrNull { layout -> layout.name == it }
             } ?: NoteLayout.GRID
         set(value) = prefs.edit { putString(KEY_LAYOUT, value.name) }
 

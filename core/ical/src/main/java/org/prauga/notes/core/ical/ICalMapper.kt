@@ -5,6 +5,7 @@ package org.prauga.notes.core.ical
 
 import java.io.StringReader
 import java.io.StringWriter
+import java.time.DateTimeException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -200,6 +201,13 @@ object ICalMapper {
                 ?.let { Alarm(-it) }
         }
 
+    private fun zoneOrNull(id: String): ZoneId? =
+        try {
+            ZoneId.of(id)
+        } catch (_: DateTimeException) {
+            null
+        }
+
     private fun ICalComponent.text(name: String): String? =
         getProperty<Property>(name).map { it.value }.orElse(null)?.takeIf { it.isNotEmpty() }
 
@@ -210,7 +218,7 @@ object ICalMapper {
         val property = getProperty<DateProperty<*>>(name).orElse(null) ?: return null
         val time = toEntryTime(property.date) ?: return null
         val tzid = property.getParameter<TzId>(Parameter.TZID).map { it.value }.orElse(null)
-        val zone = tzid?.let { runCatching { ZoneId.of(it) }.getOrNull() }
+        val zone = tzid?.let(::zoneOrNull)
         return if (time is EntryTime.DateTime && zone != null) time.copy(zone = zone) else time
     }
 

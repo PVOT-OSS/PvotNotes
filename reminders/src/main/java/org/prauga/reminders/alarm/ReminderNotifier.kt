@@ -22,6 +22,7 @@ import org.prauga.reminders.MainActivity
 import org.prauga.reminders.R
 import org.prauga.reminders.list.DayWords
 import org.prauga.reminders.list.dueLabel
+import timber.log.Timber
 
 class ReminderNotifier(private val context: Context) {
     private val manager = NotificationManagerCompat.from(context)
@@ -86,7 +87,11 @@ class ReminderNotifier(private val context: Context) {
                     actionIntent(task.id, NotificationActionReceiver.ACTION_SNOOZE, 2),
                 )
                 .build()
-        runCatching { manager.notify(notificationId(task.id), notification) }
+        try {
+            manager.notify(notificationId(task.id), notification)
+        } catch (e: SecurityException) {
+            Timber.w(e, "Notification permission revoked")
+        }
     }
 
     fun cancel(taskId: Long) = manager.cancel(notificationId(taskId))

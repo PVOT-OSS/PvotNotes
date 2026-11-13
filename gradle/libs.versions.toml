@@ -16,6 +16,7 @@ room = "2.8.5"
 navigation3 = "1.2.0"
 lifecycleNavigation3 = "2.11.0"
 coroutines = "1.11.0"
+timber = "5.0.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -38,6 +39,7 @@ androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name 
 androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
 pvot-core-ui = { group = "com.prauga.pvot", name = "core-ui" }
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 pvot-design-system = { group = "com.prauga.pvot", name = "design-system" }
 
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }

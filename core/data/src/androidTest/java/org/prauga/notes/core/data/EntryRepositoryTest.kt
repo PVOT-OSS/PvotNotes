@@ -57,17 +57,20 @@ class EntryRepositoryTest {
                     start = start,
                 )
         val id = repository.save(entry)
-        val saved = repository.getEntry(id)!!
+        val saved = checkNotNull(repository.getEntry(id))
         assertEquals(listOf("b", "a"), saved.categories)
         assertEquals(start, saved.start)
         assertEquals(0, saved.sequence)
 
         repository.save(saved.copy(summary = "Renamed"))
-        assertEquals(1, repository.getEntry(id)!!.sequence)
-        assertEquals("Renamed", repository.getEntryByUid(entry.uid)!!.summary)
+        assertEquals(1, checkNotNull(repository.getEntry(id)).sequence)
+        assertEquals("Renamed", checkNotNull(repository.getEntryByUid(entry.uid)).summary)
 
-        repository.save(repository.getEntry(id)!!.copy(summary = "Autosaved"), newRevision = false)
-        assertEquals(1, repository.getEntry(id)!!.sequence)
+        repository.save(
+            checkNotNull(repository.getEntry(id)).copy(summary = "Autosaved"),
+            newRevision = false,
+        )
+        assertEquals(1, checkNotNull(repository.getEntry(id)).sequence)
     }
 
     @Test
@@ -166,8 +169,11 @@ class EntryRepositoryTest {
                 )
         val journalId = repository.save(journal)
 
-        assertEquals(listOf(Alarm(0), Alarm(60)), repository.getEntry(parentId)!!.alarms)
-        assertEquals(journal.attachments, repository.getEntry(journalId)!!.attachments)
+        assertEquals(
+            listOf(Alarm(0), Alarm(60)),
+            checkNotNull(repository.getEntry(parentId)).alarms,
+        )
+        assertEquals(journal.attachments, checkNotNull(repository.getEntry(journalId)).attachments)
         assertEquals(
             listOf("Pack"),
             repository.observeChildren(parent.uid).first().map { it.summary },
@@ -201,10 +207,13 @@ class EntryRepositoryTest {
                         due = EntryTime.Date(LocalDate.of(2026, 11, 13)),
                     )
             )
-        val next = repository.setCompleted(id, done = true)!!
+        val next = checkNotNull(repository.setCompleted(id, done = true))
         assertEquals(EntryTime.Date(LocalDate.of(2026, 11, 20)), next.due)
         assertNull(next.completed)
         repository.save(next.copy(rrule = null))
-        assertEquals(Status.COMPLETED, repository.setCompleted(id, done = true)!!.status)
+        assertEquals(
+            Status.COMPLETED,
+            checkNotNull(repository.setCompleted(id, done = true)).status,
+        )
     }
 }

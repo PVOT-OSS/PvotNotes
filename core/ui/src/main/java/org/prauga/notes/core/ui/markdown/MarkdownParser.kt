@@ -199,7 +199,7 @@ object MarkdownParser {
         val lines = source.lines().toMutableList()
         val target = lines.getOrNull(line) ?: return source
         val match = task.matchEntire(target) ?: return source
-        val box = match.groups[2]!!.range.first
+        val box = match.groups[2]?.range?.first ?: return source
         lines[line] =
             target.replaceRange(box, box + 1, if (match.groupValues[2] == " ") "x" else " ")
         return lines.joinToString("\n")

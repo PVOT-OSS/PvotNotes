@@ -59,7 +59,7 @@ fun groupTasks(tasks: List<Entry>, now: Instant, zone: ZoneId): List<Pair<Sectio
                         list.sortedWith(compareBy({ priorityRank(it) }, { it.created }))
                     else ->
                         list.sortedWith(
-                            compareBy({ it.due!!.dueInstant(zone) }, { priorityRank(it) })
+                            compareBy({ it.due?.dueInstant(zone) }, { priorityRank(it) })
                         )
                 }
         }

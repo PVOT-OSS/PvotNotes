@@ -7,10 +7,12 @@ import android.content.Context
 import android.net.Uri
 import android.webkit.MimeTypeMap
 import java.io.File
+import java.io.IOException
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.prauga.notes.core.model.Attachment
+import timber.log.Timber
 
 /** An attachment's uri is its path relative to the app's files directory. */
 class AttachmentStore(private val context: Context) {
@@ -18,18 +20,24 @@ class AttachmentStore(private val context: Context) {
 
     suspend fun import(uri: Uri): Attachment? =
         withContext(Dispatchers.IO) {
-            runCatching {
-                    val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
-                    val extension =
-                        MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: "jpg"
-                    dir.mkdirs()
-                    val name = "${UUID.randomUUID()}.$extension"
-                    context.contentResolver.openInputStream(uri)!!.use { input ->
-                        File(dir, name).outputStream().use { input.copyTo(it) }
-                    }
-                    Attachment(uri = "$DIR/$name", mimeType = mime)
-                }
-                .getOrNull()
+            val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
+            val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: "jpg"
+            val name = "${UUID.randomUUID()}.$extension"
+            val target = File(dir, name)
+            try {
+                dir.mkdirs()
+                val input = context.contentResolver.openInputStream(uri) ?: return@withContext null
+                input.use { stream -> target.outputStream().use { stream.copyTo(it) } }
+                Attachment(uri = "$DIR/$name", mimeType = mime)
+            } catch (e: IOException) {
+                Timber.w(e, "Couldn't copy a picked image")
+                target.delete()
+                null
+            } catch (e: SecurityException) {
+                Timber.w(e, "No access to a picked image")
+                target.delete()
+                null
+            }
         }
 
     fun file(attachment: Attachment): File? =

@@ -24,7 +24,7 @@ class AppContainer(context: Context) {
     var grouping: Grouping
         get() =
             prefs.getString(KEY_GROUPING, null)?.let {
-                runCatching { Grouping.valueOf(it) }.getOrNull()
+                Grouping.entries.firstOrNull { grouping -> grouping.name == it }
             } ?: Grouping.DAY
         set(value) = prefs.edit { putString(KEY_GROUPING, value.name) }
 

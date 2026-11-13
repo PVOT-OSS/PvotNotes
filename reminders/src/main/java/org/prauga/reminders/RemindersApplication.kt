@@ -6,6 +6,7 @@ package org.prauga.reminders
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
@@ -13,6 +14,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import org.prauga.notes.core.model.Component
+import timber.log.Timber
 
 class RemindersApplication : Application() {
     val container: AppContainer by lazy { AppContainer(this) }
@@ -20,6 +22,8 @@ class RemindersApplication : Application() {
     @OptIn(FlowPreview::class)
     override fun onCreate() {
         super.onCreate()
+        if (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
+            Timber.plant(Timber.DebugTree())
         container.notifier.createChannel()
         val newTask =
             ShortcutInfo.Builder(this, SHORTCUT_NEW_TASK)
