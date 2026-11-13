@@ -4,11 +4,12 @@
 *.iml
 .claude/
 .gradle
-/local.properties
-/.idea
+.idea
+.kotlin
 .DS_Store
-/build
-/captures
 .externalNativeBuild
 .cxx
+build/
+captures/
 local.properties
+gradle/gradle-daemon-jvm.properties

@@ -7,7 +7,7 @@ SPDX-PackageSupplier = "Saalim Quadri <danascape@gmail.com>"
 SPDX-PackageDownloadLocation = "https://github.com/PVOT-OSS/Notes"
 
 [[annotations]]
-path = ["core/*/schemas/**", "gradle/gradle-daemon-jvm.properties"]
+path = ["core/*/schemas/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Saalim Quadri <danascape@gmail.com>"
 SPDX-License-Identifier = "Apache-2.0"
