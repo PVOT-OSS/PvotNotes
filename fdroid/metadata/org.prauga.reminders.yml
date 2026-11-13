@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+PackageName: org.prauga.reminders
+Name: Reminders
+Summary: Tasks with due dates, repeats, reminders, priority and subtasks
+License: Apache-2.0
+AuthorName: Saalim Quadri
+SourceCode: https://github.com/PVOT-OSS/Notes
+IssueTracker: https://github.com/PVOT-OSS/Notes/issues
+WebSite: ""
+Categories:
+  - Time
+Description: |
+  Reminders keeps your to-dos in order and reminds you on time. Tasks are
+  grouped into Overdue, Today, Upcoming and No date, with due dates and
+  times, priority, subtasks, notes and repeats. Reminders use exact alarms,
+  can be marked done or snoozed from the notification, and come back after
+  a restart. Reminders has no ads, accounts or tracking, and no internet
+  permission: your tasks stay on your phone.
+
+RepoType: git
+Repo: https://github.com/PVOT-OSS/Notes.git
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 10000
+    commit: reminders-v1.0.0
+    subdir: reminders
+    submodules: true
+    gradle:
+      - yes
+
+CurrentVersion: "1.0.0"
+CurrentVersionCode: 10000

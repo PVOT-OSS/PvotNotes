@@ -1,0 +1,28 @@
+Reminders keeps your to-dos in order and reminds you on time, without accounts, ads or tracking.
+
+Plan your day
+• Tasks are grouped into Overdue, Today, Upcoming and No date
+• Due dates with an optional time, set in a tap: Today, Tomorrow or any date
+• Priority: low, medium or high, shown with a flag and a label
+• Subtasks with a running count on the list
+• Notes on any task
+
+Reminders that arrive on time
+• One or more reminders per task: at the due time, 10 minutes, an hour or a day before
+• Exact alarms, so a reminder fires at the minute you set
+• Mark a task done or snooze it for 10 minutes straight from the notification
+• Reminders come back after a restart, and snoozes too
+
+Repeating tasks
+• Daily, weekdays, weekly, monthly or yearly
+• Completing a repeating task moves it to its next date
+
+Quick to capture
+• A quick add field at the top of the list
+• Share text from any app into a new task
+• A "New reminder" shortcut on your home screen
+
+Private and open
+• No ads, no accounts, no tracking
+• No internet permission: your tasks stay on your phone
+• Free and open source under the Apache-2.0 licence: github.com/PVOT-OSS/Notes
