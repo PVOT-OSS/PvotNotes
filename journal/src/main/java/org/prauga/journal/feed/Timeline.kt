@@ -22,9 +22,6 @@ enum class Grouping {
 /** A header in the timeline: the first day of its day, week or month. */
 data class Period(val grouping: Grouping, val start: LocalDate)
 
-/**
- * When an entry happened in local time; entries without a date fall back to when they were made.
- */
 fun Entry.moment(zone: ZoneId): LocalDateTime =
     when (val time = start) {
         is EntryTime.Date -> time.date.atStartOfDay()
@@ -46,7 +43,6 @@ fun periodOf(date: LocalDate, grouping: Grouping, locale: Locale): Period =
         Grouping.MONTH -> Period(grouping, date.withDayOfMonth(1))
     }
 
-/** Newest first, grouped under their day, week or month. */
 fun timeline(
     entries: List<Entry>,
     grouping: Grouping,
@@ -58,7 +54,6 @@ fun timeline(
         .groupBy { periodOf(it.moment(zone).toLocalDate(), grouping, locale) }
         .toList()
 
-/** The seven days of the week containing [date]. */
 fun weekDays(date: LocalDate, locale: Locale): List<LocalDate> {
     val first = weekStart(date, locale)
     return (0L..6L).map { first.plusDays(it) }

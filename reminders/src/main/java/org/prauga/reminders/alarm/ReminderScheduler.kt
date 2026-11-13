@@ -18,8 +18,7 @@ import org.prauga.notes.core.data.EntryRepository
 import org.prauga.notes.core.model.Component
 
 /**
- * Keeps one alarm set for the next reminder of any open task. [sync] notifies whatever came due
- * since the last check (also after a reboot or while the alarm was late), then sets the next one.
+ * One alarm for the next reminder; [sync] first notifies whatever came due since the last check.
  */
 class ReminderScheduler(
     private val context: Context,
@@ -56,20 +55,18 @@ class ReminderScheduler(
             }
         }
 
-    /** Snoozes are stored so a reboot or an app update (which clear alarms) doesn't lose them. */
+    /** Stored, because a reboot or force-stop clears alarms. */
     fun snooze(taskId: Long, minutes: Long = SNOOZE_MINUTES) {
         val at = clock.instant().plusSeconds(minutes * 60)
         prefs.edit { putLong(SNOOZE_PREFIX + taskId, at.toEpochMilli()) }
         set(at, alarmIntent(taskId))
     }
 
-    /** Called when a snooze fires or its task is done. */
     fun clearSnooze(taskId: Long) {
         prefs.edit { remove(SNOOZE_PREFIX + taskId) }
         alarmManager.cancel(alarmIntent(taskId))
     }
 
-    /** Re-arms pending snoozes and notifies the ones that came due while no alarm was set. */
     private suspend fun resumeSnoozes(now: Instant) {
         prefs.all.keys
             .filter { it.startsWith(SNOOZE_PREFIX) }

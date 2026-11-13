@@ -23,9 +23,8 @@ class MainActivity : PvotBaseActivity() {
         if (savedInstanceState == null) request = intent.toEditorRequest()
         setPvotContent {
             PvotAppTheme {
-                // PvotScreenScaffold sets no content colour; without this, untinted icons and text
-                // are
-                // black, invisible in the dark theme.
+                // PvotScreenScaffold sets no content colour: untinted icons would be black on the
+                // dark theme.
                 CompositionLocalProvider(
                     LocalContentColor provides MaterialTheme.colorScheme.onBackground
                 ) {

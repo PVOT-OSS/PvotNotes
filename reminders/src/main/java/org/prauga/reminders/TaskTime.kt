@@ -9,7 +9,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import org.prauga.notes.core.model.EntryTime
 
-/** When an all-day task's reminders count from: 09:00 on its date. */
 val ALL_DAY_REMINDER_TIME: LocalTime = LocalTime.of(9, 0)
 
 fun EntryTime.localDate(zone: ZoneId): LocalDate =
@@ -27,7 +26,6 @@ fun EntryTime.dueInstant(zone: ZoneId): Instant =
         is EntryTime.DateTime -> dateTime.atZone(this.zone ?: zone).toInstant()
     }
 
-/** The instant reminders count back from. */
 fun EntryTime.reminderBase(zone: ZoneId): Instant =
     when (this) {
         is EntryTime.Date -> date.atTime(ALL_DAY_REMINDER_TIME).atZone(zone).toInstant()

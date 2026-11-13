@@ -47,7 +47,6 @@ fun sectionOf(task: Entry, now: Instant, zone: ZoneId): Section {
     }
 }
 
-/** Groups tasks into non-empty sections in display order, each sorted for reading. */
 fun groupTasks(tasks: List<Entry>, now: Instant, zone: ZoneId): List<Pair<Section, List<Entry>>> =
     tasks
         .groupBy { sectionOf(it, now, zone) }

@@ -8,7 +8,7 @@ import java.time.ZoneId
 import org.prauga.notes.core.model.Entry
 import org.prauga.reminders.reminderBase
 
-/** A reminder of [taskId] at [at]; [armedAt] is when the task was last changed. */
+/** [armedAt] is when the task was last changed. */
 data class Trigger(val taskId: Long, val at: Instant, val armedAt: Instant = Instant.EPOCH)
 
 /** Every reminder of every open task, earliest first. */
@@ -24,14 +24,12 @@ fun triggers(tasks: List<Entry>, zone: ZoneId): List<Trigger> =
         .sortedBy { it.at }
 
 /**
- * Reminders that came due in (after, upTo]: what to notify when an alarm fires. A reminder only
- * counts if its task was set up before it came due, so editing a task into the past stays quiet.
+ * Only reminders set up before they came due count, so editing a task into the past stays quiet.
  */
 fun dueBetween(triggers: List<Trigger>, after: Instant, upTo: Instant): List<Trigger> =
     triggers
         .filter { it.at > after && it.at <= upTo && it.armedAt < it.at }
         .distinctBy { it.taskId }
 
-/** The next reminder strictly after [after]: what to schedule. */
 fun nextAfter(triggers: List<Trigger>, after: Instant): Trigger? =
     triggers.firstOrNull { it.at > after }

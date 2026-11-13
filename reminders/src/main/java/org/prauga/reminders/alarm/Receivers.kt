@@ -10,7 +10,6 @@ import kotlinx.coroutines.launch
 import org.prauga.reminders.MainActivity
 import org.prauga.reminders.appContainer
 
-/** Runs [block] on the app scope while keeping the broadcast alive until it finishes. */
 private fun BroadcastReceiver.work(context: Context, block: suspend () -> Unit) {
     val pending = goAsync()
     context.appContainer.applicationScope.launch {
@@ -68,7 +67,6 @@ class NotificationActionReceiver : BroadcastReceiver() {
     }
 }
 
-/** Boot, app updates, clock and time zone changes, and exact-alarm permission changes. */
 class RescheduleReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         work(context) { context.appContainer.scheduler.sync() }

@@ -67,8 +67,7 @@ class NoteListViewModel(
 
     private val collections = repository.observeCollectionCounts(Component.VJOURNAL)
 
-    // A selected collection or tag can disappear (deleted collection, last note untagged): drop it,
-    // or the query keeps filtering on something the UI no longer shows. Tags follow the collection.
+    // A selected collection or tag can disappear; filtering on it would hide every note.
     private val selectedCollection =
         combine(controls, collections) { controls, collections ->
                 controls.collection?.takeIf { id -> collections.any { it.id == id } }

@@ -28,9 +28,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
-/**
- * Each colour is a CSS3 keyword (tomato, orange, gold, …) so it survives iCalendar COLOR exactly.
- */
+/** CSS3 keyword colours, so a colour survives iCalendar's COLOR property exactly. */
 enum class EntryColor(val argb: Int, @StringRes val label: Int) {
     RED(0xFFFF6347.toInt(), R.string.ui_color_red),
     ORANGE(0xFFFFA500.toInt(), R.string.ui_color_orange),

@@ -88,7 +88,6 @@ import org.prauga.reminders.list.Priority
 import org.prauga.reminders.list.dueLabel
 import org.prauga.reminders.list.label
 
-/** The repeat presets offered in the editor, as RFC 5545 rules. */
 enum class RepeatPreset(val rule: String?, val label: Int) {
     NONE(null, R.string.repeat_none),
     DAILY("FREQ=DAILY", R.string.repeat_daily),
@@ -535,7 +534,6 @@ private fun AlarmChips(alarms: List<Int>, viewModel: TaskEditorViewModel) {
     }
 }
 
-/** Asks for notifications once, and explains the exact-alarm setting when it's off. */
 @Composable
 private fun PermissionPrompts(scheduler: ReminderScheduler, notifier: ReminderNotifier) {
     val context = LocalContext.current

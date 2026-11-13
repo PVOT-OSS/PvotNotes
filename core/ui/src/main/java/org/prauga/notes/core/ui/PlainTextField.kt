@@ -21,7 +21,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 
-/** A borderless text field with a placeholder; the cursor starts after the existing text. */
 @Composable
 fun PlainTextField(
     value: String,

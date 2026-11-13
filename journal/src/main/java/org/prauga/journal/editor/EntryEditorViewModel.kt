@@ -139,7 +139,6 @@ class EntryEditorViewModel(
         }
     }
 
-    /** Removing a photo deletes its copy at once; there is no undo. */
     fun removePhoto(attachment: Attachment) {
         edit { it.copy(attachments = it.attachments - attachment) }
         viewModelScope.launch {

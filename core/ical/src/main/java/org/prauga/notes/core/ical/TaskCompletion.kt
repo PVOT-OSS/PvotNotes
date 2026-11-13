@@ -9,8 +9,8 @@ import org.prauga.notes.core.model.Status
 
 object TaskCompletion {
     /**
-     * Marks [task] done at [now]. A repeating task with a date moves to its next occurrence and
-     * stays open instead, the way task apps handle a series without storing every instance.
+     * A repeating task with a date moves to its next occurrence and stays open instead of
+     * completing.
      */
     fun complete(task: Entry, now: Instant): Entry {
         val rule = task.rrule

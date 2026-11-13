@@ -118,7 +118,6 @@ class EntryRepository(
     suspend fun openWithAlarms(component: Component): List<Entry> =
         entries.getOpenWithAlarms(component.name).map { it.toModel() }
 
-    /** Completes or reopens a task; a repeating one moves to its next date instead. */
     suspend fun setCompleted(id: Long, done: Boolean): Entry? {
         val task = getEntry(id) ?: return null
         val updated =

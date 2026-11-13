@@ -36,7 +36,7 @@ object Recurrence {
             }
             .getOrNull()
 
-    /** Minutes in an RFC 5545 duration such as `-PT15M`, `-P1D` or `-P1W`; positive is after. */
+    /** Signed minutes of an RFC 5545 duration (`-PT15M` is -15); positive is after. */
     fun durationMinutes(value: String): Int? {
         val match = DURATION.matchEntire(value.trim()) ?: return null
         val (sign, weeks, days, hours, minutes, seconds) = match.destructured
@@ -49,7 +49,6 @@ object Recurrence {
         return (if (sign == "-") -total else total).toInt()
     }
 
-    /** An RFC 5545 duration for [minutes], negative meaning before. */
     fun duration(minutes: Int): String {
         val sign = if (minutes < 0) "-" else ""
         val m = kotlin.math.abs(minutes)

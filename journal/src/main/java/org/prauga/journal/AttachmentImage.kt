@@ -22,7 +22,6 @@ import kotlinx.coroutines.withContext
 
 private val cache = LruCache<String, ImageBitmap>(48)
 
-/** Decodes [file] no larger than about [maxPx] on its long side, off the main thread. */
 private fun decode(file: File, maxPx: Int): ImageBitmap? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     BitmapFactory.decodeFile(file.path, bounds)

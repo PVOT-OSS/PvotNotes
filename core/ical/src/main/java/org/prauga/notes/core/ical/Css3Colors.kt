@@ -3,7 +3,6 @@
 
 package org.prauga.notes.core.ical
 
-/** The CSS3 colour keywords that RFC 7986 allows in the COLOR property, as RGB. */
 object Css3Colors {
     val byName: Map<String, Int> =
         mapOf(

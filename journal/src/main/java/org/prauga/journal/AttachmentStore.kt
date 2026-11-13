@@ -12,11 +12,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.prauga.notes.core.model.Attachment
 
-/** Photos live in the app's private files directory; an attachment's uri is its relative path. */
+/** An attachment's uri is its path relative to the app's files directory. */
 class AttachmentStore(private val context: Context) {
     private val dir = File(context.filesDir, DIR)
 
-    /** Copies a picked or shared image into the app, so it stays even if the original goes. */
     suspend fun import(uri: Uri): Attachment? =
         withContext(Dispatchers.IO) {
             runCatching {
