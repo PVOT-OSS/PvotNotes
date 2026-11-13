@@ -1,0 +1,32 @@
+// SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+// SPDX-License-Identifier: Apache-2.0
+
+import com.android.build.api.dsl.ApplicationExtension
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.dependencies
+
+class AndroidApplicationConventionPlugin : Plugin<Project> {
+    override fun apply(target: Project) =
+        with(target) {
+            pluginManager.apply("com.android.application")
+            extensions.configure<ApplicationExtension> {
+                compileSdk { version = release(Sdk.COMPILE) { minorApiLevel = Sdk.COMPILE_MINOR } }
+                defaultConfig {
+                    minSdk = target.minSdk
+                    targetSdk = Sdk.TARGET
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
+                compileOptions {
+                    sourceCompatibility = JAVA_VERSION
+                    targetCompatibility = JAVA_VERSION
+                }
+                dependenciesInfo {
+                    includeInApk = false
+                    includeInBundle = false
+                }
+            }
+            dependencies { add("testImplementation", libs.lib("junit")) }
+        }
+}

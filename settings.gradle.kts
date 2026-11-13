@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pluginManagement {
-    includeBuild("PvotLib/build-logic")
+    includeBuild("build-logic")
     repositories {
         google {
             content {

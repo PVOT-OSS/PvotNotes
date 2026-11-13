@@ -44,13 +44,19 @@ androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-
 pvot-core-ui = { group = "com.prauga.pvot", name = "core-ui" }
 pvot-design-system = { group = "com.prauga.pvot", name = "design-system" }
 
+android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
+compose-gradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 room = { id = "androidx.room", version.ref = "room" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 pvot-android-application = { id = "pvot.android.application" }
 pvot-android-compose = { id = "pvot.android.compose" }
 pvot-android-library = { id = "pvot.android.library" }
+pvot-jvm-library = { id = "pvot.jvm.library" }

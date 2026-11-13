@@ -6,9 +6,6 @@ plugins {
     alias(libs.plugins.pvot.android.compose)
 }
 
-android {
-    namespace = "org.prauga.notes.core.ui"
-    resourcePrefix = "ui_"
-}
+android { namespace = "org.prauga.notes.core.ui" }
 
 dependencies { api(libs.pvot.design.system) }

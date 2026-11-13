@@ -7,17 +7,13 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-val versionMajor = 1
-val versionMinor = 0
-val versionPatch = 0
-
 android {
     namespace = "org.prauga.journal"
 
     defaultConfig {
         applicationId = "org.prauga.journal"
-        versionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
-        versionName = "$versionMajor.$versionMinor.$versionPatch"
+        versionCode = rootProject.extra["journal.versionCode"] as Int
+        versionName = rootProject.extra["journal.versionName"] as String
     }
 
     buildTypes {

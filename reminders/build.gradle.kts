@@ -7,17 +7,13 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-val versionMajor = 1
-val versionMinor = 0
-val versionPatch = 0
-
 android {
     namespace = "org.prauga.reminders"
 
     defaultConfig {
         applicationId = "org.prauga.reminders"
-        versionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
-        versionName = "$versionMajor.$versionMinor.$versionPatch"
+        versionCode = rootProject.extra["reminders.versionCode"] as Int
+        versionName = rootProject.extra["reminders.versionName"] as String
     }
 
     buildTypes {
