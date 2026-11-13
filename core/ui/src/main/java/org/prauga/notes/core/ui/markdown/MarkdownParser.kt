@@ -3,39 +3,6 @@
 
 package org.prauga.notes.core.ui.markdown
 
-sealed interface MarkdownBlock {
-    data class Heading(val level: Int, val text: String) : MarkdownBlock
-
-    data class Paragraph(val text: String) : MarkdownBlock
-
-    data class Bullet(val text: String, val indent: Int) : MarkdownBlock
-
-    data class Numbered(val number: String, val text: String, val indent: Int) : MarkdownBlock
-
-    data class Task(val checked: Boolean, val text: String, val line: Int, val indent: Int) :
-        MarkdownBlock
-
-    data class Quote(val text: String) : MarkdownBlock
-
-    data class Code(val text: String) : MarkdownBlock
-
-    data object Rule : MarkdownBlock
-}
-
-sealed interface MarkdownSpan {
-    data class Text(val text: String) : MarkdownSpan
-
-    data class Bold(val children: List<MarkdownSpan>) : MarkdownSpan
-
-    data class Italic(val children: List<MarkdownSpan>) : MarkdownSpan
-
-    data class Strike(val children: List<MarkdownSpan>) : MarkdownSpan
-
-    data class Code(val text: String) : MarkdownSpan
-
-    data class Link(val text: String, val url: String) : MarkdownSpan
-}
-
 object MarkdownParser {
     private val heading = Regex("^(#{1,6})\\s+(.*)$")
     private val task = Regex("^(\\s*)[-*+]\\s+\\[([ xX])]\\s?(.*)$")

@@ -12,13 +12,6 @@ import org.prauga.notes.core.model.Component
 import org.prauga.notes.core.model.Entry
 import org.prauga.notes.core.model.EntryCollection
 
-data class EntryFilter(
-    val collectionId: Long? = null,
-    val category: String? = null,
-    val query: String = "",
-    val topLevelOnly: Boolean = false,
-)
-
 class EntryRepository(
     private val database: EntryDatabase,
     private val clock: Clock = Clock.systemUTC(),
