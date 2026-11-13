@@ -20,11 +20,11 @@ import org.prauga.journal.editor.EntryEditorViewModel
 import org.prauga.journal.feed.FeedScreen
 import org.prauga.journal.feed.FeedViewModel
 
-@Serializable data object Feed : NavKey
+@Serializable internal data object Feed : NavKey
 
 /** [date] (ISO) is the day a new entry is for; [image] a shared image's content URI. */
 @Serializable
-data class EntryEditor(
+internal data class EntryEditor(
     val id: Long = 0,
     val title: String = "",
     val text: String = "",
@@ -33,7 +33,7 @@ data class EntryEditor(
 ) : NavKey
 
 @Composable
-fun JournalNavigation(request: EntryEditor?, onRequestHandled: () -> Unit) {
+internal fun JournalNavigation(request: EntryEditor?, onRequestHandled: () -> Unit) {
     val backStack = rememberNavBackStack(Feed)
     val container = LocalContext.current.appContainer
 
@@ -56,8 +56,15 @@ fun JournalNavigation(request: EntryEditor?, onRequestHandled: () -> Unit) {
             entryProvider {
                 entry<Feed> {
                     FeedScreen(
-                        viewModel = viewModel { FeedViewModel(container) },
-                        attachments = container.attachments,
+                        viewModel =
+                            viewModel {
+                                FeedViewModel(
+                                    container.repository,
+                                    container.preferences,
+                                    container.defaultCollectionName,
+                                )
+                            },
+                        fileOf = container.attachments::file,
                         onOpenEntry = { backStack.add(EntryEditor(id = it)) },
                         onNewEntry = { day -> backStack.add(EntryEditor(date = day?.toString())) },
                     )
@@ -66,9 +73,16 @@ fun JournalNavigation(request: EntryEditor?, onRequestHandled: () -> Unit) {
                     EntryEditorScreen(
                         viewModel =
                             viewModel {
-                                EntryEditorViewModel(container, key, createSavedStateHandle())
+                                EntryEditorViewModel(
+                                    container.repository,
+                                    container.attachments,
+                                    key,
+                                    container.defaultCollectionName,
+                                    container.applicationScope,
+                                    createSavedStateHandle(),
+                                )
                             },
-                        attachments = container.attachments,
+                        fileOf = container.attachments::file,
                         onClose = { backStack.removeLastOrNull() },
                     )
                 }

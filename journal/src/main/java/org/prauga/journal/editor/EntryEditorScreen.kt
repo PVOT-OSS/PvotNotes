@@ -60,6 +60,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.prauga.pvot.coreui.UiState
 import com.prauga.pvot.designsystem.components.PvotDialog
 import com.prauga.pvot.designsystem.components.PvotDialogAction
 import com.prauga.pvot.designsystem.components.PvotDialogActionStyle
@@ -67,13 +68,14 @@ import com.prauga.pvot.designsystem.components.PvotScreenScaffold
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
 import com.prauga.pvot.designsystem.navigation.PvotTopBarAction
 import com.prauga.pvot.designsystem.theme.PvotSpacing
+import java.io.File
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import org.prauga.journal.AttachmentImage
-import org.prauga.journal.AttachmentStore
 import org.prauga.journal.R
 import org.prauga.notes.core.model.Attachment
 import org.prauga.notes.core.ui.AppDimens
@@ -81,12 +83,39 @@ import org.prauga.notes.core.ui.PlainTextField
 import org.prauga.notes.core.ui.markdown.MarkdownText
 
 @Composable
-fun EntryEditorScreen(
+internal fun EntryEditorScreen(
     viewModel: EntryEditorViewModel,
-    attachments: AttachmentStore,
+    fileOf: (Attachment) -> File?,
     onClose: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                EntryEditorEffect.Closed -> onClose()
+            }
+        }
+    }
+    when (val current = state) {
+        is UiState.Success ->
+            EntryEditorScaffold(
+                state = current.data,
+                onEvent = viewModel::onEvent,
+                fileOf = fileOf,
+                onClose = onClose,
+            )
+        UiState.Loading,
+        is UiState.Error -> Unit
+    }
+}
+
+@Composable
+private fun EntryEditorScaffold(
+    state: EntryEditorState,
+    onEvent: (EntryEditorEvent) -> Unit,
+    fileOf: (Attachment) -> File?,
+    onClose: () -> Unit,
+) {
     val context = LocalContext.current
     var confirmDelete by remember { mutableStateOf(false) }
     var viewing by remember { mutableStateOf<Attachment?>(null) }
@@ -101,7 +130,7 @@ fun EntryEditorScreen(
                         ),
                     contentDescription =
                         stringResource(if (state.editing) R.string.done else R.string.edit),
-                    onClick = { viewModel.setEditing(!state.editing) },
+                    onClick = { onEvent(EntryEditorEvent.SetEditing(!state.editing)) },
                 )
                 PvotTopBarAction(
                     icon = painterResource(R.drawable.ic_share),
@@ -111,7 +140,7 @@ fun EntryEditorScreen(
                         val send =
                             Intent(Intent.ACTION_SEND)
                                 .setType("text/plain")
-                                .putExtra(Intent.EXTRA_TEXT, viewModel.shareText())
+                                .putExtra(Intent.EXTRA_TEXT, shareText(state.title, state.body))
                         if (state.title.isNotBlank())
                             send.putExtra(Intent.EXTRA_SUBJECT, state.title)
                         context.startActivity(Intent.createChooser(send, shareTitle))
@@ -121,29 +150,27 @@ fun EntryEditorScreen(
                     icon = painterResource(R.drawable.ic_delete),
                     contentDescription = stringResource(R.string.delete),
                     onClick = {
-                        if (state.saved) confirmDelete = true else viewModel.delete(onClose)
+                        if (state.saved) confirmDelete = true else onEvent(EntryEditorEvent.Delete)
                     },
                 )
             }
         }
     ) { padding ->
-        if (!state.loading) {
-            EditorContent(
-                state = state,
-                viewModel = viewModel,
-                attachments = attachments,
-                onViewPhoto = { viewing = it },
-                modifier =
-                    Modifier.fillMaxSize()
-                        .imePadding()
-                        .verticalScroll(rememberScrollState())
-                        .padding(
-                            top = padding.calculateTopPadding(),
-                            bottom = padding.calculateBottomPadding(),
-                        )
-                        .padding(horizontal = AppDimens.ScreenGutter, vertical = PvotSpacing.S),
-            )
-        }
+        EditorContent(
+            state = state,
+            onEvent = onEvent,
+            fileOf = fileOf,
+            onViewPhoto = { viewing = it },
+            modifier =
+                Modifier.fillMaxSize()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        top = padding.calculateTopPadding(),
+                        bottom = padding.calculateBottomPadding(),
+                    )
+                    .padding(horizontal = AppDimens.ScreenGutter, vertical = PvotSpacing.S),
+        )
     }
     PvotDialog(
         visible = confirmDelete,
@@ -159,7 +186,7 @@ fun EntryEditorScreen(
             style = PvotDialogActionStyle.Destructive,
             onClick = {
                 confirmDelete = false
-                viewModel.delete(onClose)
+                onEvent(EntryEditorEvent.Delete)
             },
         )
         PvotDialogAction(
@@ -178,7 +205,7 @@ fun EntryEditorScreen(
                 }
             ) {
                 AttachmentImage(
-                    file = attachments.file(photo),
+                    file = fileOf(photo),
                     contentDescription = stringResource(R.string.photo),
                     maxPx = 2048,
                     contentScale = ContentScale.Fit,
@@ -192,9 +219,9 @@ fun EntryEditorScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EditorContent(
-    state: EntryEditorUiState,
-    viewModel: EntryEditorViewModel,
-    attachments: AttachmentStore,
+    state: EntryEditorState,
+    onEvent: (EntryEditorEvent) -> Unit,
+    fileOf: (Attachment) -> File?,
     onViewPhoto: (Attachment) -> Unit,
     modifier: Modifier,
 ) {
@@ -203,16 +230,16 @@ private fun EditorContent(
     val pickPhotos =
         rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris
             ->
-            if (uris.isNotEmpty()) viewModel.addPhotos(uris)
+            if (uris.isNotEmpty()) onEvent(EntryEditorEvent.AddPhotos(uris))
         }
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(PvotSpacing.M)) {
-        MomentChips(state, viewModel)
+        MomentChips(state.moment, onEvent)
         if (state.editing) {
             val bodyFocus = remember { FocusRequester() }
             LaunchedEffect(Unit) { if (state.focusBody) bodyFocus.requestFocus() }
             PlainTextField(
                 value = state.title,
-                onValueChange = { viewModel.setTitle(it.replace("\n", "")) },
+                onValueChange = { onEvent(EntryEditorEvent.SetTitle(it.replace("\n", ""))) },
                 placeholder = stringResource(R.string.title),
                 style = typography.headlineSmall.copy(color = colors.onSurface),
                 imeAction = ImeAction.Next,
@@ -221,7 +248,7 @@ private fun EditorContent(
             )
             PlainTextField(
                 value = state.body,
-                onValueChange = viewModel::setBody,
+                onValueChange = { onEvent(EntryEditorEvent.SetBody(it)) },
                 placeholder = stringResource(R.string.body),
                 style = typography.bodyLarge.copy(color = colors.onSurface),
                 modifier = Modifier.fillMaxWidth().focusRequester(bodyFocus),
@@ -229,14 +256,17 @@ private fun EditorContent(
         } else {
             Column(
                 Modifier.fillMaxWidth().clickable(interactionSource = null, indication = null) {
-                    viewModel.setEditing(true)
+                    onEvent(EntryEditorEvent.SetEditing(true))
                 },
                 verticalArrangement = Arrangement.spacedBy(PvotSpacing.M),
             ) {
                 if (state.title.isNotBlank())
                     Text(state.title, style = typography.headlineSmall, color = colors.onSurface)
                 if (state.body.isNotBlank()) {
-                    MarkdownText(markdown = state.body, onToggleTask = viewModel::toggleTask)
+                    MarkdownText(
+                        markdown = state.body,
+                        onToggleTask = { onEvent(EntryEditorEvent.ToggleTask(it)) },
+                    )
                 } else {
                     Text(
                         stringResource(R.string.body),
@@ -254,7 +284,7 @@ private fun EditorContent(
             state.attachments.forEach { photo ->
                 Box(Modifier.size(AppDimens.PhotoTile)) {
                     AttachmentImage(
-                        file = attachments.file(photo),
+                        file = fileOf(photo),
                         contentDescription = stringResource(R.string.photo),
                         maxPx = 360,
                         modifier =
@@ -266,7 +296,7 @@ private fun EditorContent(
                         Modifier.align(Alignment.TopEnd)
                             .size(AppDimens.TouchTarget)
                             .clip(CircleShape)
-                            .clickable { viewModel.removePhoto(photo) },
+                            .clickable { onEvent(EntryEditorEvent.RemovePhoto(photo)) },
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(
@@ -304,7 +334,7 @@ private fun EditorContent(
             state.categories.forEach { category ->
                 InputChip(
                     selected = false,
-                    onClick = { viewModel.removeCategory(category) },
+                    onClick = { onEvent(EntryEditorEvent.RemoveCategory(category)) },
                     label = { Text("#$category") },
                     trailingIcon = {
                         Icon(
@@ -321,7 +351,7 @@ private fun EditorContent(
             value = newTag,
             onValueChange = { value ->
                 if (value.endsWith(',')) {
-                    viewModel.addCategory(value.dropLast(1))
+                    onEvent(EntryEditorEvent.AddCategory(value.dropLast(1)))
                     newTag = ""
                 } else {
                     newTag = value
@@ -333,7 +363,7 @@ private fun EditorContent(
             capitalization = KeyboardCapitalization.None,
             imeAction = ImeAction.Done,
             onImeAction = {
-                viewModel.addCategory(newTag)
+                onEvent(EntryEditorEvent.AddCategory(newTag))
                 newTag = ""
             },
             modifier =
@@ -365,7 +395,7 @@ private fun EditorContent(
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun MomentChips(state: EntryEditorUiState, viewModel: EntryEditorViewModel) {
+private fun MomentChips(moment: LocalDateTime, onEvent: (EntryEditorEvent) -> Unit) {
     val locale = LocalConfiguration.current.locales[0]
     var pickDate by remember { mutableStateOf(false) }
     var pickTime by remember { mutableStateOf(false) }
@@ -376,7 +406,7 @@ private fun MomentChips(state: EntryEditorUiState, viewModel: EntryEditorViewMod
                 Text(
                     DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
                         .withLocale(locale)
-                        .format(state.moment)
+                        .format(moment)
                 )
             },
             leadingIcon = {
@@ -389,7 +419,7 @@ private fun MomentChips(state: EntryEditorUiState, viewModel: EntryEditorViewMod
                 Text(
                     DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
                         .withLocale(locale)
-                        .format(state.moment)
+                        .format(moment)
                 )
             },
             leadingIcon = {
@@ -401,11 +431,7 @@ private fun MomentChips(state: EntryEditorUiState, viewModel: EntryEditorViewMod
         val picker =
             rememberDatePickerState(
                 initialSelectedDateMillis =
-                    state.moment
-                        .toLocalDate()
-                        .atStartOfDay(ZoneOffset.UTC)
-                        .toInstant()
-                        .toEpochMilli()
+                    moment.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
             )
         DatePickerDialog(
             onDismissRequest = { pickDate = false },
@@ -413,8 +439,10 @@ private fun MomentChips(state: EntryEditorUiState, viewModel: EntryEditorViewMod
                 TextButton(
                     onClick = {
                         picker.selectedDateMillis?.let {
-                            viewModel.setDate(
-                                Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()
+                            onEvent(
+                                EntryEditorEvent.SetDate(
+                                    Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()
+                                )
                             )
                         }
                         pickDate = false
@@ -434,8 +462,8 @@ private fun MomentChips(state: EntryEditorUiState, viewModel: EntryEditorViewMod
         val context = LocalContext.current
         val picker =
             rememberTimePickerState(
-                initialHour = state.moment.hour,
-                initialMinute = state.moment.minute,
+                initialHour = moment.hour,
+                initialMinute = moment.minute,
                 is24Hour = android.text.format.DateFormat.is24HourFormat(context),
             )
         AlertDialog(
@@ -443,7 +471,7 @@ private fun MomentChips(state: EntryEditorUiState, viewModel: EntryEditorViewMod
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.setTime(LocalTime.of(picker.hour, picker.minute))
+                        onEvent(EntryEditorEvent.SetTime(LocalTime.of(picker.hour, picker.minute)))
                         pickTime = false
                     }
                 ) {
@@ -461,3 +489,6 @@ private fun MomentChips(state: EntryEditorUiState, viewModel: EntryEditorViewMod
         )
     }
 }
+
+private fun shareText(title: String, body: String): String =
+    listOf(title, body).filter { it.isNotBlank() }.joinToString("\n\n")

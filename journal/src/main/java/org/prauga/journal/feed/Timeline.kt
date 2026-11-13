@@ -13,16 +13,7 @@ import java.util.Locale
 import org.prauga.notes.core.model.Entry
 import org.prauga.notes.core.model.EntryTime
 
-enum class Grouping {
-    DAY,
-    WEEK,
-    MONTH,
-}
-
-/** A header in the timeline: the first day of its day, week or month. */
-data class Period(val grouping: Grouping, val start: LocalDate)
-
-fun Entry.moment(zone: ZoneId): LocalDateTime =
+internal fun Entry.moment(zone: ZoneId): LocalDateTime =
     when (val time = start) {
         is EntryTime.Date -> time.date.atStartOfDay()
         is EntryTime.DateTime ->
@@ -31,19 +22,19 @@ fun Entry.moment(zone: ZoneId): LocalDateTime =
         null -> LocalDateTime.ofInstant(created, zone)
     }
 
-fun firstDayOfWeek(locale: Locale): DayOfWeek = WeekFields.of(locale).firstDayOfWeek
+internal fun firstDayOfWeek(locale: Locale): DayOfWeek = WeekFields.of(locale).firstDayOfWeek
 
-fun weekStart(date: LocalDate, locale: Locale): LocalDate =
+internal fun weekStart(date: LocalDate, locale: Locale): LocalDate =
     date.with(TemporalAdjusters.previousOrSame(firstDayOfWeek(locale)))
 
-fun periodOf(date: LocalDate, grouping: Grouping, locale: Locale): Period =
+internal fun periodOf(date: LocalDate, grouping: Grouping, locale: Locale): Period =
     when (grouping) {
         Grouping.DAY -> Period(grouping, date)
         Grouping.WEEK -> Period(grouping, weekStart(date, locale))
         Grouping.MONTH -> Period(grouping, date.withDayOfMonth(1))
     }
 
-fun timeline(
+internal fun timeline(
     entries: List<Entry>,
     grouping: Grouping,
     zone: ZoneId,
@@ -54,7 +45,7 @@ fun timeline(
         .groupBy { periodOf(it.moment(zone).toLocalDate(), grouping, locale) }
         .toList()
 
-fun weekDays(date: LocalDate, locale: Locale): List<LocalDate> {
+internal fun weekDays(date: LocalDate, locale: Locale): List<LocalDate> {
     val first = weekStart(date, locale)
     return (0L..6L).map { first.plusDays(it) }
 }

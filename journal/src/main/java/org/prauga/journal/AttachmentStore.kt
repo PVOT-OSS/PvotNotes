@@ -3,7 +3,7 @@
 
 package org.prauga.journal
 
-import android.content.Context
+import android.content.ContentResolver
 import android.net.Uri
 import android.webkit.MimeTypeMap
 import java.io.File
@@ -15,18 +15,18 @@ import org.prauga.notes.core.model.Attachment
 import timber.log.Timber
 
 /** An attachment's uri is its path relative to the app's files directory. */
-class AttachmentStore(private val context: Context) {
-    private val dir = File(context.filesDir, DIR)
+internal class AttachmentStore(private val filesDir: File, private val resolver: ContentResolver) {
+    private val dir = File(filesDir, DIR)
 
     suspend fun import(uri: Uri): Attachment? =
         withContext(Dispatchers.IO) {
-            val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
+            val mime = resolver.getType(uri) ?: "image/jpeg"
             val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: "jpg"
             val name = "${UUID.randomUUID()}.$extension"
             val target = File(dir, name)
             try {
                 dir.mkdirs()
-                val input = context.contentResolver.openInputStream(uri) ?: return@withContext null
+                val input = resolver.openInputStream(uri) ?: return@withContext null
                 input.use { stream -> target.outputStream().use { stream.copyTo(it) } }
                 Attachment(uri = "$DIR/$name", mimeType = mime)
             } catch (e: IOException) {
@@ -43,7 +43,7 @@ class AttachmentStore(private val context: Context) {
     fun file(attachment: Attachment): File? =
         attachment.uri
             .takeIf { it.startsWith("$DIR/") && !it.contains("..") }
-            ?.let { File(context.filesDir, it) }
+            ?.let { File(filesDir, it) }
 
     suspend fun delete(attachments: List<Attachment>) =
         withContext(Dispatchers.IO) { attachments.forEach { file(it)?.delete() } }

@@ -36,7 +36,7 @@ private fun decode(file: File, maxPx: Int): ImageBitmap? {
 }
 
 @Composable
-fun AttachmentImage(
+internal fun AttachmentImage(
     file: File?,
     contentDescription: String?,
     maxPx: Int,

@@ -13,7 +13,7 @@ import android.graphics.drawable.Icon
 import timber.log.Timber
 
 class JournalApplication : Application() {
-    val container: AppContainer by lazy { AppContainer(this) }
+    internal val container: AppContainer by lazy { AppContainer(this) }
 
     override fun onCreate() {
         super.onCreate()
@@ -35,5 +35,5 @@ class JournalApplication : Application() {
     }
 }
 
-val Context.appContainer: AppContainer
+internal val Context.appContainer: AppContainer
     get() = (applicationContext as JournalApplication).container

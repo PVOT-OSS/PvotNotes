@@ -48,6 +48,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.coreui.PvotEmptyContent
+import com.prauga.pvot.coreui.PvotErrorContent
+import com.prauga.pvot.coreui.PvotLoadingContent
+import com.prauga.pvot.coreui.UiState
 import com.prauga.pvot.designsystem.components.PvotCard
 import com.prauga.pvot.designsystem.components.PvotScreenScaffold
 import com.prauga.pvot.designsystem.components.PvotSegmentedControl
@@ -56,26 +59,54 @@ import com.prauga.pvot.designsystem.components.button.PvotIconButton
 import com.prauga.pvot.designsystem.components.textfield.PvotTextField
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
 import com.prauga.pvot.designsystem.theme.PvotSpacing
+import java.io.File
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 import org.prauga.journal.AttachmentImage
-import org.prauga.journal.AttachmentStore
 import org.prauga.journal.R
+import org.prauga.notes.core.model.Attachment
 import org.prauga.notes.core.model.Entry
 import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.markdown.MarkdownText
 
 @Composable
-fun FeedScreen(
+internal fun FeedScreen(
     viewModel: FeedViewModel,
-    attachments: AttachmentStore,
+    fileOf: (Attachment) -> File?,
     onOpenEntry: (Long) -> Unit,
     onNewEntry: (LocalDate?) -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    when (val current = state) {
+        UiState.Loading -> PvotLoadingContent()
+        is UiState.Error ->
+            PvotErrorContent(
+                title = stringResource(R.string.error_title),
+                message = stringResource(R.string.error_message),
+                onRetry = { viewModel.onEvent(FeedEvent.Retry) },
+            )
+        is UiState.Success ->
+            FeedScaffold(
+                state = current.data,
+                onEvent = viewModel::onEvent,
+                fileOf = fileOf,
+                onOpenEntry = onOpenEntry,
+                onNewEntry = onNewEntry,
+            )
+    }
+}
+
+@Composable
+private fun FeedScaffold(
+    state: FeedState,
+    onEvent: (FeedEvent) -> Unit,
+    fileOf: (Attachment) -> File?,
+    onOpenEntry: (Long) -> Unit,
+    onNewEntry: (LocalDate?) -> Unit,
+) {
     val locale = LocalConfiguration.current.locales[0]
     val zone = ZoneId.systemDefault()
     PvotScreenScaffold(
@@ -106,22 +137,22 @@ fun FeedScreen(
                     selected = state.controls.selectedDay,
                     daysWithEntries = state.daysWithEntries,
                     locale = locale,
-                    onShift = viewModel::shiftWeek,
-                    onSelect = viewModel::selectDay,
+                    onShift = { onEvent(FeedEvent.ShiftWeek(it)) },
+                    onSelect = { onEvent(FeedEvent.SelectDay(it)) },
                 )
             }
-            item { QuickAdd(onAdd = viewModel::quickAdd) }
+            item { QuickAdd(onAdd = { onEvent(FeedEvent.QuickAdd(it)) }) }
             if (state.controls.selectedDay == null) {
                 item {
                     PvotSegmentedControl(
                         options = Grouping.entries.map { stringResource(it.label) },
                         selectedIndex = state.controls.grouping.ordinal,
-                        onSelect = { viewModel.setGrouping(Grouping.entries[it]) },
+                        onSelect = { onEvent(FeedEvent.SetGrouping(Grouping.entries[it])) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
-            if (!state.loading && state.entries.isEmpty()) {
+            if (state.entries.isEmpty()) {
                 item {
                     PvotEmptyContent(
                         message =
@@ -147,7 +178,7 @@ fun FeedScreen(
                 items(entries, key = { it.id }) { entry ->
                     EntryCard(
                         entry,
-                        attachments,
+                        fileOf,
                         grouping,
                         zone,
                         locale,
@@ -269,7 +300,7 @@ private fun WeekStrip(
 @Composable
 private fun EntryCard(
     entry: Entry,
-    attachments: AttachmentStore,
+    fileOf: (Attachment) -> File?,
     grouping: Grouping,
     zone: ZoneId,
     locale: Locale,
@@ -317,7 +348,7 @@ private fun EntryCard(
                 Row(horizontalArrangement = Arrangement.spacedBy(PvotSpacing.S)) {
                     entry.attachments.take(3).forEach { attachment ->
                         AttachmentImage(
-                            file = attachments.file(attachment),
+                            file = fileOf(attachment),
                             contentDescription = stringResource(R.string.photo),
                             maxPx = 320,
                             modifier =
