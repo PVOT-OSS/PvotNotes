@@ -30,3 +30,10 @@ internal fun dueBetween(triggers: List<Trigger>, after: Instant, upTo: Instant):
 
 internal fun nextAfter(triggers: List<Trigger>, after: Instant): Trigger? =
     triggers.firstOrNull { it.at > after }
+
+internal fun snoozeAction(task: Entry?, at: Instant, now: Instant): SnoozeAction =
+    when {
+        task == null || task.completed != null -> SnoozeAction.DROP
+        at <= now -> SnoozeAction.NOTIFY
+        else -> SnoozeAction.REARM
+    }

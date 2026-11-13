@@ -73,14 +73,14 @@ internal class ReminderScheduler(
             .forEach { key ->
                 val taskId = key.removePrefix(SNOOZE_PREFIX).toLongOrNull() ?: return@forEach
                 val at = Instant.ofEpochMilli(prefs.getLong(key, 0))
-                val task = repository.getEntry(taskId)?.takeIf { it.completed == null }
-                when {
-                    task == null -> clearSnooze(taskId)
-                    at <= now -> {
-                        notifier.notify(task)
+                val task = repository.getEntry(taskId)
+                when (snoozeAction(task, at, now)) {
+                    SnoozeAction.DROP -> clearSnooze(taskId)
+                    SnoozeAction.NOTIFY -> {
+                        task?.let { notifier.notify(it) }
                         clearSnooze(taskId)
                     }
-                    else -> set(at, alarmIntent(taskId))
+                    SnoozeAction.REARM -> set(at, alarmIntent(taskId))
                 }
             }
     }
