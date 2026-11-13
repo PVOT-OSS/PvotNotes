@@ -25,6 +25,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.prauga.pvot.coreui.PvotErrorContent
+import com.prauga.pvot.coreui.PvotLoadingContent
+import com.prauga.pvot.coreui.UiState
 import com.prauga.pvot.designsystem.components.PvotDialog
 import com.prauga.pvot.designsystem.components.PvotDialogAction
 import com.prauga.pvot.designsystem.components.PvotDialogActionStyle
@@ -43,8 +46,26 @@ import org.prauga.notes.core.ui.EntryColorRow
 private data class CollectionDraft(val id: Long = 0, val name: String = "", val color: Int? = null)
 
 @Composable
-fun CollectionsScreen(viewModel: CollectionsViewModel, onBack: () -> Unit) {
-    val collections by viewModel.collections.collectAsStateWithLifecycle()
+internal fun CollectionsScreen(viewModel: CollectionsViewModel, onBack: () -> Unit) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    when (val current = state) {
+        UiState.Loading -> PvotLoadingContent()
+        is UiState.Error ->
+            PvotErrorContent(
+                title = stringResource(R.string.error_title),
+                message = stringResource(R.string.error_message),
+                onRetry = { viewModel.onEvent(CollectionsEvent.Retry) },
+            )
+        is UiState.Success -> CollectionsContent(current.data, viewModel::onEvent, onBack)
+    }
+}
+
+@Composable
+private fun CollectionsContent(
+    collections: List<CollectionCount>,
+    onEvent: (CollectionsEvent) -> Unit,
+    onBack: () -> Unit,
+) {
     var draft by remember { mutableStateOf<CollectionDraft?>(null) }
     var deleting by remember { mutableStateOf<CollectionCount?>(null) }
 
@@ -137,7 +158,7 @@ fun CollectionsScreen(viewModel: CollectionsViewModel, onBack: () -> Unit) {
                 style = PvotDialogActionStyle.Primary,
                 enabled = name.isNotBlank(),
                 onClick = {
-                    viewModel.save(current.id, name, color)
+                    onEvent(CollectionsEvent.Save(current.id, name, color))
                     draft = null
                 },
             )
@@ -172,7 +193,7 @@ fun CollectionsScreen(viewModel: CollectionsViewModel, onBack: () -> Unit) {
                 label = stringResource(R.string.delete),
                 style = PvotDialogActionStyle.Destructive,
                 onClick = {
-                    viewModel.delete(collection.id)
+                    onEvent(CollectionsEvent.Delete(collection.id))
                     deleting = null
                 },
             )

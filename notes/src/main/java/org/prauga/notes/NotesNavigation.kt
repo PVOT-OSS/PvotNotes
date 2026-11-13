@@ -22,20 +22,20 @@ import org.prauga.notes.editor.NoteEditorViewModel
 import org.prauga.notes.list.NoteListScreen
 import org.prauga.notes.list.NoteListViewModel
 
-@Serializable data object NoteList : NavKey
+@Serializable internal data object NoteList : NavKey
 
 @Serializable
-data class NoteEditor(
+internal data class NoteEditor(
     val id: Long = 0,
     val title: String = "",
     val text: String = "",
     val collectionId: Long = 0,
 ) : NavKey
 
-@Serializable data object Collections : NavKey
+@Serializable internal data object Collections : NavKey
 
 @Composable
-fun NotesNavigation(request: NoteEditor?, onRequestHandled: () -> Unit) {
+internal fun NotesNavigation(request: NoteEditor?, onRequestHandled: () -> Unit) {
     val backStack = rememberNavBackStack(NoteList)
     val container = LocalContext.current.appContainer
     val repository = container.repository
