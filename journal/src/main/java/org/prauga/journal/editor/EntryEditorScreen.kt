@@ -81,6 +81,7 @@ import org.prauga.notes.core.model.Attachment
 import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.PlainTextField
 import org.prauga.notes.core.ui.markdown.MarkdownText
+import org.prauga.notes.core.ui.rememberTopBarCompact
 
 @Composable
 internal fun EntryEditorScreen(
@@ -120,9 +121,11 @@ private fun EntryEditorScaffold(
     var confirmDelete by remember { mutableStateOf(false) }
     var viewing by remember { mutableStateOf<Attachment?>(null) }
     val shareTitle = stringResource(R.string.share)
+    val scroll = rememberScrollState()
+    val compact = rememberTopBarCompact(scroll)
     PvotScreenScaffold(
         topBar = {
-            PvotTopBar(title = "", onBack = onClose) {
+            PvotTopBar(title = "", onBack = onClose, compact = compact) {
                 PvotTopBarAction(
                     icon =
                         painterResource(
@@ -164,7 +167,7 @@ private fun EntryEditorScaffold(
             modifier =
                 Modifier.fillMaxSize()
                     .imePadding()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scroll)
                     .padding(
                         top = padding.calculateTopPadding(),
                         bottom = padding.calculateBottomPadding(),

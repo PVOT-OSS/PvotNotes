@@ -58,6 +58,7 @@ import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.EntryColorRow
 import org.prauga.notes.core.ui.PlainTextField
 import org.prauga.notes.core.ui.markdown.MarkdownText
+import org.prauga.notes.core.ui.rememberTopBarCompact
 
 @Composable
 internal fun NoteEditorScreen(viewModel: NoteEditorViewModel, onClose: () -> Unit) {
@@ -86,9 +87,11 @@ private fun NoteEditorScaffold(
     var confirmDelete by remember { mutableStateOf(false) }
     val shareTitle = stringResource(R.string.share)
 
+    val scroll = rememberScrollState()
+    val compact = rememberTopBarCompact(scroll)
     PvotScreenScaffold(
         topBar = {
-            PvotTopBar(title = "", onBack = onClose) {
+            PvotTopBar(title = "", onBack = onClose, compact = compact) {
                 PvotTopBarAction(
                     icon =
                         painterResource(
@@ -128,7 +131,7 @@ private fun NoteEditorScaffold(
             modifier =
                 Modifier.fillMaxSize()
                     .imePadding()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scroll)
                     .padding(
                         top = padding.calculateTopPadding(),
                         bottom = padding.calculateBottomPadding(),

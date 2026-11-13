@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -58,6 +59,7 @@ import com.prauga.pvot.designsystem.components.button.PvotFab
 import com.prauga.pvot.designsystem.components.button.PvotIconButton
 import com.prauga.pvot.designsystem.components.textfield.PvotTextField
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
+import com.prauga.pvot.designsystem.navigation.rememberPvotTopBarCompact
 import com.prauga.pvot.designsystem.theme.PvotSpacing
 import java.io.File
 import java.time.LocalDate
@@ -109,8 +111,10 @@ private fun FeedScaffold(
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val zone = ZoneId.systemDefault()
+    val listState = rememberLazyListState()
+    val compact = rememberPvotTopBarCompact(listState)
     PvotScreenScaffold(
-        topBar = { PvotTopBar(title = stringResource(R.string.app_name)) },
+        topBar = { PvotTopBar(title = stringResource(R.string.app_name), compact = compact) },
         floatingAction = {
             PvotFab(
                 icon = painterResource(R.drawable.ic_add),
@@ -121,6 +125,7 @@ private fun FeedScaffold(
         },
     ) { padding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding =
                 PaddingValues(

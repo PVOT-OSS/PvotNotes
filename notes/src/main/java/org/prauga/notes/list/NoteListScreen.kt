@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.FilterChip
@@ -60,6 +62,7 @@ import org.prauga.notes.core.model.Entry
 import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.entryContainerColor
 import org.prauga.notes.core.ui.markdown.MarkdownText
+import org.prauga.notes.core.ui.rememberTopBarCompact
 
 @Composable
 internal fun NoteListScreen(
@@ -97,10 +100,12 @@ private fun NoteListScaffold(
     onOpenCollections: () -> Unit,
 ) {
     BackHandler(enabled = state.searching) { onEvent(NoteListEvent.SetSearching(false)) }
+    val gridState = rememberLazyStaggeredGridState()
+    val compact = rememberTopBarCompact(gridState)
 
     PvotScreenScaffold(
         topBar = {
-            PvotTopBar(title = stringResource(R.string.app_name)) {
+            PvotTopBar(title = stringResource(R.string.app_name), compact = compact) {
                 PvotTopBarAction(
                     icon = painterResource(R.drawable.ic_folder),
                     contentDescription = stringResource(R.string.collections),
@@ -135,13 +140,14 @@ private fun NoteListScaffold(
             )
         },
     ) { padding ->
-        NoteListContent(state, padding, onEvent, onOpenNote)
+        NoteListContent(state, gridState, padding, onEvent, onOpenNote)
     }
 }
 
 @Composable
 private fun NoteListContent(
     state: NoteListState,
+    gridState: LazyStaggeredGridState,
     padding: PaddingValues,
     onEvent: (NoteListEvent) -> Unit,
     onOpenNote: (Long) -> Unit,
@@ -151,6 +157,7 @@ private fun NoteListContent(
         else StaggeredGridCells.Fixed(1)
     LazyVerticalStaggeredGrid(
         columns = columns,
+        state = gridState,
         modifier = Modifier.fillMaxSize(),
         contentPadding =
             PaddingValues(

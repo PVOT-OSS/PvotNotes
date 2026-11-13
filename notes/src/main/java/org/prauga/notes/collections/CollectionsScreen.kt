@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -37,6 +38,7 @@ import com.prauga.pvot.designsystem.components.list.PvotListGroup
 import com.prauga.pvot.designsystem.components.list.PvotListRow
 import com.prauga.pvot.designsystem.components.textfield.PvotTextField
 import com.prauga.pvot.designsystem.navigation.PvotTopBar
+import com.prauga.pvot.designsystem.navigation.rememberPvotTopBarCompact
 import com.prauga.pvot.designsystem.theme.PvotSpacing
 import org.prauga.notes.R
 import org.prauga.notes.core.data.CollectionCount
@@ -69,8 +71,16 @@ private fun CollectionsContent(
     var draft by remember { mutableStateOf<CollectionDraft?>(null) }
     var deleting by remember { mutableStateOf<CollectionCount?>(null) }
 
+    val listState = rememberLazyListState()
+    val compact = rememberPvotTopBarCompact(listState)
     PvotScreenScaffold(
-        topBar = { PvotTopBar(title = stringResource(R.string.collections), onBack = onBack) },
+        topBar = {
+            PvotTopBar(
+                title = stringResource(R.string.collections),
+                onBack = onBack,
+                compact = compact,
+            )
+        },
         floatingAction = {
             PvotFab(
                 icon = painterResource(R.drawable.ic_add),
@@ -81,6 +91,7 @@ private fun CollectionsContent(
         },
     ) { padding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding =
                 PaddingValues(

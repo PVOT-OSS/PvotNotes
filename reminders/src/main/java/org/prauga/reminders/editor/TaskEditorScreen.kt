@@ -83,6 +83,7 @@ import java.time.format.FormatStyle
 import org.prauga.notes.core.model.EntryTime
 import org.prauga.notes.core.ui.AppDimens
 import org.prauga.notes.core.ui.PlainTextField
+import org.prauga.notes.core.ui.rememberTopBarCompact
 import org.prauga.reminders.R
 import org.prauga.reminders.list.DayWords
 import org.prauga.reminders.list.Priority
@@ -129,9 +130,11 @@ private fun TaskEditorScaffold(
     onClose: () -> Unit,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
+    val scroll = rememberScrollState()
+    val compact = rememberTopBarCompact(scroll)
     PvotScreenScaffold(
         topBar = {
-            PvotTopBar(title = "", onBack = onClose) {
+            PvotTopBar(title = "", onBack = onClose, compact = compact) {
                 PvotTopBarAction(
                     icon = painterResource(R.drawable.ic_delete),
                     contentDescription = stringResource(R.string.delete),
@@ -150,7 +153,7 @@ private fun TaskEditorScaffold(
             modifier =
                 Modifier.fillMaxSize()
                     .imePadding()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scroll)
                     .padding(
                         top = padding.calculateTopPadding(),
                         bottom = padding.calculateBottomPadding(),
